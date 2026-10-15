@@ -225,8 +225,92 @@ def _chromium() -> str | None:
     return None
 
 
-def to_pdf(docx_path: Path, html_path: Path, pdf_path: Path) -> str | None:
-    """Returns the engine used, or None if no PDF engine is available."""
+FONT_DIR = Path(__file__).resolve().parent / "fonts"
+
+
+def to_pdf_fpdf(blocks: list[tuple], pdf_path: Path) -> int:
+    """Pure-Python PDF (fpdf2 + bundled Carlito). Same output on PC, phone-hosted API, anywhere.
+    Returns the page count."""
+    from fpdf import FPDF
+
+    pdf = FPDF(format="A4", unit="mm")
+    pdf.set_margins(12, 10, 12)
+    pdf.set_auto_page_break(True, margin=10)
+    pdf.add_font("Carlito", "", str(FONT_DIR / "Carlito-Regular.ttf"))
+    pdf.add_font("Carlito", "B", str(FONT_DIR / "Carlito-Bold.ttf"))
+    pdf.set_title("Resume")
+    pdf.set_author("Swastik Kumar Ray")
+    pdf.add_page()
+    W = pdf.w - pdf.l_margin - pdf.r_margin
+    LH = 4.15
+
+    def font(style="", size=10):
+        pdf.set_font("Carlito", style, size)
+
+    for b in blocks:
+        kind = b[0]
+        if kind == "name":
+            font("B", 17)
+            pdf.cell(W, 7, b[1], new_x="LMARGIN", new_y="NEXT")
+        elif kind == "headline":
+            font("B", 10)
+            pdf.cell(W, LH, b[1], new_x="LMARGIN", new_y="NEXT")
+        elif kind == "contact":
+            font("", 10)
+            for i, x in enumerate(b[1]):
+                sep = " | " if i < len(b[1]) - 1 else ""
+                if isinstance(x, tuple):
+                    pdf.write(LH, x[0], link=x[1] or "https://" + x[0])
+                elif "@" in x:
+                    pdf.write(LH, x, link="mailto:" + x)
+                else:
+                    pdf.write(LH, x)
+                pdf.write(LH, sep)
+            pdf.ln(LH + 0.6)
+        elif kind == "section":
+            pdf.ln(1.6)
+            font("B", 10.5)
+            pdf.cell(W, 4.6, b[1], new_x="LMARGIN", new_y="NEXT")
+            y = pdf.get_y()
+            pdf.set_line_width(0.25)
+            pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
+            pdf.ln(0.8)
+        elif kind == "role":
+            pdf.ln(0.6)
+            font("B", 10)
+            dw = pdf.get_string_width(b[2]) + 1
+            y = pdf.get_y()
+            pdf.multi_cell(W - dw - 2, LH, b[1], align="L", new_x="LMARGIN", new_y="NEXT")
+            y2 = pdf.get_y()
+            pdf.set_xy(pdf.l_margin + W - dw, y)
+            pdf.cell(dw, LH, b[2], align="R")
+            pdf.set_xy(pdf.l_margin, y2)
+        elif kind == "bullet":
+            font("", 10)
+            pdf.set_x(pdf.l_margin + 1.5)
+            pdf.cell(4, LH, "•")
+            pdf.multi_cell(W - 5.5, LH, b[1], align="L", new_x="LMARGIN", new_y="NEXT")
+        elif kind in ("para", "line"):
+            font("", 10)
+            pdf.multi_cell(W, LH, b[1], align="L", new_x="LMARGIN", new_y="NEXT")
+        elif kind == "skill":
+            font("", 10)
+            body = b[2].replace("*", "").replace("__", "_").replace("--", "-")
+            pdf.multi_cell(W, LH, f"**{b[1]}:** {body}", markdown=True, align="L", new_x="LMARGIN", new_y="NEXT")
+    pdf.output(str(pdf_path))
+    return pdf.pages_count
+
+
+def to_pdf(docx_path: Path, html_path: Path, pdf_path: Path, blocks: list[tuple] | None = None) -> str | None:
+    """Returns the engine used, or None if no PDF engine is available.
+    ANVIL_PDF_ENGINE = fpdf (default, works everywhere) | libreoffice | chromium."""
+    engine = os.environ.get("ANVIL_PDF_ENGINE", "fpdf").lower()
+    if engine == "fpdf" and blocks is not None:
+        try:
+            to_pdf_fpdf(blocks, pdf_path)
+            return "fpdf"
+        except ImportError:
+            pass
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
     if soffice and docx_path.exists():
         with tempfile.TemporaryDirectory() as tmp:

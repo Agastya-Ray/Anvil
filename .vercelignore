@@ -1,0 +1,5 @@
+out
+state
+tests
+*.md
+!README.md

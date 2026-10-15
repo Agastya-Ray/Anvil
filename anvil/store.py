@@ -1,15 +1,25 @@
 """File locations and JSON helpers. Everything lives under ANVIL_HOME (default: cwd)."""
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
 import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
+
+PKG_ROOT = Path(__file__).resolve().parents[1]
 
 
 def home() -> Path:
-    return Path(os.environ.get("ANVIL_HOME", os.getcwd())).resolve()
+    """ANVIL_HOME, else the repo the package sits in (works on Vercel), else cwd."""
+    if os.environ.get("ANVIL_HOME"):
+        return Path(os.environ["ANVIL_HOME"]).resolve()
+    if (PKG_ROOT / "vault" / "skeleton.json").exists():
+        return PKG_ROOT
+    return Path(os.getcwd()).resolve()
 
 
 def vault() -> Path:
@@ -23,7 +33,9 @@ def state() -> Path:
 
 
 def out_dir() -> Path:
-    p = home() / "out"
+    p = Path(os.environ["ANVIL_OUT"]) if os.environ.get("ANVIL_OUT") else home() / "out"
+    if os.environ.get("VERCEL") and not os.environ.get("ANVIL_OUT"):
+        p = Path("/tmp/anvil-out")  # serverless: only /tmp is writable
     p.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -60,3 +72,112 @@ def safe_id(canonical_id: str) -> str:
 def file_company(company: str) -> str:
     s = re.sub(r"[^A-Za-z0-9]+", "_", company).strip("_")
     return s or "Company"
+
+
+# ---------------------------------------------------------------- shared state
+# Learning state (bandit-log, applications, recon cache) must be shared by the CLI,
+# the hosted API and any AI calling it. Backends:
+#   local  (default)   files under state/
+#   github             JSON files on a branch of a GitHub repo (like Ember's leads-data)
+#                      env: ANVIL_STATE=github, GITHUB_TOKEN, ANVIL_STATE_REPO (owner/name),
+#                           ANVIL_STATE_BRANCH (default anvil-state)
+
+
+class StateError(Exception):
+    pass
+
+
+def backend() -> str:
+    b = os.environ.get("ANVIL_STATE", "").strip().lower()
+    if b:
+        return b
+    if os.environ.get("VERCEL"):
+        return "github"
+    return "local"
+
+
+class _GitHub:
+    def __init__(self):
+        self.token = os.environ.get("GITHUB_TOKEN", "").strip()
+        self.repo = os.environ.get("ANVIL_STATE_REPO", "Agastya-Ray/Anvil").strip()
+        self.branch = os.environ.get("ANVIL_STATE_BRANCH", "anvil-state").strip()
+        if not self.token:
+            raise StateError("ANVIL_STATE=github needs GITHUB_TOKEN (contents read/write on " + self.repo + ")")
+        self.shas: dict[str, str] = {}
+
+    def _req(self, method: str, path: str, body: dict | None = None):
+        url = f"https://api.github.com/repos/{self.repo}/{path}"
+        req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body else None, headers={
+            "authorization": f"Bearer {self.token}", "accept": "application/vnd.github+json",
+            "user-agent": "anvil", "x-github-api-version": "2022-11-28"})
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return r.status, json.loads(r.read().decode() or "null")
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read().decode() or "null")
+
+    def get(self, rel: str):
+        code, data = self._req("GET", f"contents/state/{rel}?ref={self.branch}")
+        if code == 404:
+            self.shas.pop(rel, None)
+            return None
+        if code != 200:
+            raise StateError(f"GitHub read {rel}: HTTP {code} {str(data)[:200]}")
+        self.shas[rel] = data["sha"]
+        return json.loads(base64.b64decode(data["content"]).decode("utf-8"))
+
+    def _ensure_branch(self):
+        code, _ = self._req("GET", f"branches/{self.branch}")
+        if code == 200:
+            return
+        code, repo = self._req("GET", "")
+        if code != 200:
+            raise StateError(f"cannot read repo {self.repo}: HTTP {code}")
+        code, ref = self._req("GET", f"git/ref/heads/{repo['default_branch']}")
+        if code != 200:
+            raise StateError(f"cannot read default branch of {self.repo}: HTTP {code}")
+        code, out = self._req("POST", "git/refs", {"ref": f"refs/heads/{self.branch}", "sha": ref["object"]["sha"]})
+        if code not in (201, 422):
+            raise StateError(f"cannot create branch {self.branch}: HTTP {code} {str(out)[:200]}")
+
+    def put(self, rel: str, data) -> None:
+        content = base64.b64encode((json.dumps(data, indent=2, ensure_ascii=False) + "\n").encode()).decode()
+        for attempt in range(3):
+            if rel not in self.shas:
+                self.get(rel)
+            body = {"message": f"anvil: update {rel}", "content": content, "branch": self.branch}
+            if rel in self.shas:
+                body["sha"] = self.shas[rel]
+            code, out = self._req("PUT", f"contents/state/{rel}", body)
+            if code in (200, 201):
+                self.shas[rel] = out["content"]["sha"]
+                return
+            if code == 404 and attempt == 0:
+                self._ensure_branch()
+                continue
+            if code in (409, 422):  # stale sha: someone else wrote; re-read sha and retry
+                self.shas.pop(rel, None)
+                continue
+            raise StateError(f"GitHub write {rel}: HTTP {code} {str(out)[:200]}")
+        raise StateError(f"GitHub write {rel}: kept conflicting")
+
+
+_gh: _GitHub | None = None
+
+
+def read_state(rel: str, default=None):
+    global _gh
+    if backend() == "github":
+        _gh = _gh or _GitHub()
+        v = _gh.get(rel)
+        return default if v is None else v
+    return load(state() / rel, default)
+
+
+def write_state(rel: str, data) -> None:
+    global _gh
+    if backend() == "github":
+        _gh = _gh or _GitHub()
+        _gh.put(rel, data)
+        return
+    save(state() / rel, data)

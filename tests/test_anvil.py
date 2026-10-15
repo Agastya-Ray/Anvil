@@ -111,7 +111,7 @@ class TestTailorAndBandit(Base):
     def test_tailor_writes_guarded_cv_and_logs(self):
         self._no_ember()
         from anvil import bandit, tailor
-        app = tailor.run("manual:acme:1", self.args())
+        app = tailor.run("manual:acme:1", self.args())["application"]
         self.assertEqual(app["outcome"], "PENDING")
         self.assertEqual(app["cluster"], "ba_pa")
         out = self.tmp / app["out_dir"]
@@ -129,14 +129,14 @@ class TestTailorAndBandit(Base):
     def test_feedback_moves_weights_and_golden(self):
         self._no_ember()
         from anvil import bandit, tailor
-        app = tailor.run("manual:acme:1", self.args())
+        app = tailor.run("manual:acme:1", self.args())["application"]
         bandit.apply_outcome("manual:acme:1", "callback")
         log = bandit.load_log()
         g = app["genes_used"][0]
         self.assertEqual(log["genes"]["ba_pa"][g]["alpha"], 3)
         self.assertEqual(log["golden"]["ba_pa"][0]["dna_hash"], app["dna_hash"])
 
-        app2 = tailor.run("manual:acme:2", self.args(company="Beta Co"))
+        app2 = tailor.run("manual:acme:2", self.args(company="Beta Co"))["application"]
         bandit.apply_outcome("manual:acme:2", "rejected")
         log = bandit.load_log()
         for gid in app2["genes_used"]:
@@ -147,7 +147,7 @@ class TestTailorAndBandit(Base):
         from anvil import bandit, engine, tailor
         apps = []
         for i in range(8):
-            apps.append(tailor.run(f"manual:co{i}:1", self.args(company=f"Co{i}", seed=1)))
+            apps.append(tailor.run(f"manual:co{i}:1", self.args(company=f"Co{i}", seed=1))["application"])
         old = (datetime.now(timezone.utc) - timedelta(days=20)).isoformat(timespec="seconds")
         data = bandit.load_apps()
         for a in data:
@@ -159,7 +159,7 @@ class TestTailorAndBandit(Base):
         hooks = log["hooks"]["ba_pa"]
         dep = [h for h, v in hooks.items() if v["deprecated"]]
         self.assertTrue(dep, "a hook sent 8 times with 0 replies must be deprecated")
-        nxt = tailor.run("manual:co9:1", self.args(company="Co9", seed=1))
+        nxt = tailor.run("manual:co9:1", self.args(company="Co9", seed=1))["application"]
         self.assertNotIn(nxt["hook_id"], dep)
 
     def test_polish_rejects_invented_facts(self):
@@ -193,15 +193,104 @@ class TestEmberLead(Base):
                                company_url=None, notes="Hiring manager posted about fixing HubSpot hygiene.",
                                cluster=None, polish=False, golden=False, formats="html", seed=2, refresh=False,
                                dry_run=False, force=False, copy_to=None)
-        app = tailor.run(cid, args)
+        app = tailor.run(cid, args)["application"]
         self.assertEqual(app["cluster"], "revops_ops")
-        rec = json.loads(recon.recon_path(cid).read_text())
+        rec = recon.load_recon(cid)
         self.assertTrue(rec["product_summary"][0].startswith("Sprinto is"))
         self.assertIn("HubSpot", [g["skill"] for g in rec["jd_diff"]["gaps"]])
         self.assertIn("HubSpot hygiene", rec["notes"])
         # DEAD leads are refused
         with self.assertRaises(SystemExit):
-            tailor.run("lever:oldco:1", args)
+            tailor.run("lever:oldco:1", args)["application"]
+
+
+class TestGitHubState(unittest.TestCase):
+    def test_branch_created_and_sha_conflict_retried(self):
+        import base64
+        from anvil import store
+        files, branches, calls = {}, {"main"}, []
+
+        def fake(self, method, path, body=None):
+            calls.append((method, path))
+            if path.startswith("contents/state/"):
+                rel = path.split("contents/state/")[1].split("?")[0]
+                if method == "GET":
+                    if "anvil-state" not in branches or rel not in files:
+                        return 404, {}
+                    sha, data = files[rel]
+                    return 200, {"sha": sha, "content": base64.b64encode(data.encode()).decode()}
+                if "anvil-state" not in branches:
+                    return 404, {}
+                if rel in files and body.get("sha") != files[rel][0]:
+                    return 409, {}
+                sha = f"s{len(calls)}"
+                files[rel] = (sha, base64.b64decode(body["content"]).decode())
+                return 200, {"content": {"sha": sha}}
+            if path == "branches/anvil-state":
+                return (200 if "anvil-state" in branches else 404), {}
+            if path == "":
+                return 200, {"default_branch": "main"}
+            if path == "git/ref/heads/main":
+                return 200, {"object": {"sha": "abc"}}
+            if path == "git/refs":
+                branches.add("anvil-state")
+                return 201, {}
+            return 404, {}
+
+        os.environ.update(ANVIL_STATE="github", GITHUB_TOKEN="t")
+        self.addCleanup(lambda: [os.environ.pop(k, None) for k in ("ANVIL_STATE", "GITHUB_TOKEN")])
+        orig = store._GitHub._req
+        store._GitHub._req = fake
+        self.addCleanup(setattr, store._GitHub, "_req", orig)
+        store._gh = None
+        self.assertIsNone(store.read_state("applications.json"))
+        store.write_state("applications.json", [{"a": 1}])
+        self.assertIn("anvil-state", branches)
+        self.assertEqual(store.read_state("applications.json"), [{"a": 1}])
+        files["applications.json"] = ("other", "[]")  # someone else wrote in between
+        store.write_state("applications.json", [{"a": 2}])
+        self.assertEqual(store.read_state("applications.json"), [{"a": 2}])
+        store._gh = None
+
+
+class TestServer(Base):
+    def call(self, method, path, body=None, key="k1", qs=""):
+        import io
+        from anvil import server
+        raw = json.dumps(body).encode() if body is not None else b""
+        env = {"REQUEST_METHOD": method, "PATH_INFO": path, "QUERY_STRING": qs, "CONTENT_LENGTH": str(len(raw)),
+               "wsgi.input": io.BytesIO(raw), "HTTP_HOST": "x.test", "wsgi.url_scheme": "https"}
+        if key:
+            env["HTTP_AUTHORIZATION"] = "Bearer " + key
+        out = {}
+        body = b"".join(server.app(env, lambda s, h: out.update(s=s, h=dict(h))))
+        return out["s"], out["h"]["Content-Type"], body
+
+    def test_rest_mcp_and_download(self):
+        os.environ["ANVIL_API_KEYS"] = "k1"
+        self.addCleanup(os.environ.pop, "ANVIL_API_KEYS", None)
+        from anvil import ember
+        ember.company_url_candidates = lambda lead, jd="": []
+        self.assertTrue(self.call("GET", "/api/v1/stats", key="nope")[0].startswith("401"))
+        jd = TestTailorAndBandit.JD
+        s, _, b = self.call("POST", "/api/v1/tailor", {"jd_text": jd, "company": "Acme", "role": "Business Analyst"})
+        self.assertTrue(s.startswith("200"), b)
+        data = json.loads(b)["data"]
+        cid = data["canonical_id"]
+        pdf_url = data["downloads"]["pdf"].replace("https://x.test", "")
+        s, ctype, pdf = self.call("GET", pdf_url)
+        self.assertEqual(ctype, "application/pdf")
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        s, _, b = self.call("POST", "/api/mcp", {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                                "params": {"name": "feedback",
+                                                           "arguments": {"canonical_id": cid, "outcome": "callback"}}},
+                            key=None, qs="key=k1")
+        res = json.loads(b)["result"]
+        self.assertFalse(res["isError"], res)
+        self.assertIn("CALLBACK", res["content"][0]["text"])
+        s, _, b = self.call("POST", "/api/mcp", {"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
+        self.assertIn("tailor", [t["name"] for t in json.loads(b)["result"]["tools"]])
+        self.assertTrue(self.call("GET", "/", key=None)[0].startswith("200"))
 
 
 if __name__ == "__main__":

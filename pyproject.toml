@@ -3,7 +3,7 @@ name = "anvil"
 version = "0.1.0"
 description = "Evolutionary resume bandit and recon engine"
 requires-python = ">=3.10"
-dependencies = ["python-docx>=1.1", "pypdf>=4.0"]
+dependencies = ["python-docx>=1.1", "pypdf>=4.0", "fpdf2>=2.7"]
 
 [project.scripts]
 anvil = "anvil.cli:main"

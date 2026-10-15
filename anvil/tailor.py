@@ -13,16 +13,17 @@ from .taxonomy import classify, cluster_scores
 def load_pool() -> dict:
     pool = store.load(store.vault() / "gene-pool.json")
     if not pool:
-        print("No gene pool yet, running ingest first.")
+        log("No gene pool yet, running ingest first.")
         pool = ingest.run()
     return pool
 
 
 def resolve_lead(canonical_id: str | None, args) -> dict:
-    if args.jd_file and (args.company or not canonical_id):
+    jd_text = getattr(args, "jd_text", None)
+    if (args.jd_file or jd_text) and (args.company or not canonical_id):
         company = args.company or "Company"
-        cid = canonical_id or f"manual:{store.file_company(company).lower()}:" + hashlib.sha1(
-            Path(args.jd_file).read_bytes()).hexdigest()[:8]
+        raw = jd_text.encode() if jd_text else Path(args.jd_file).read_bytes()
+        cid = canonical_id or f"manual:{store.file_company(company).lower()}:" + hashlib.sha1(raw).hexdigest()[:8]
         return {"canonical_id": cid, "company": company, "role": args.role or "", "url": args.url or "",
                 "verdict": "MANUAL"}
     leads = ember.load_leads(args.leads_file)
@@ -38,18 +39,19 @@ def resolve_lead(canonical_id: str | None, args) -> dict:
     return lead
 
 
-def run(canonical_id: str | None, args) -> dict:
+def run(canonical_id: str | None, args, log=print) -> dict:
     skeleton = store.skeleton()
     pool = load_pool()
     swaps_cfg = store.load(store.vault() / "swaps.json", {}) or {}
     ghosted = bandit.ghost_sweep()
     if ghosted:
-        print(f"Auto-ghosted (no reply in {bandit.GHOST_DAYS} days): {', '.join(ghosted)}")
+        log(f"Auto-ghosted (no reply in {bandit.GHOST_DAYS} days): {', '.join(ghosted)}")
 
     lead = resolve_lead(canonical_id, args)
     cid, company, role = lead["canonical_id"], lead.get("company", ""), lead.get("role", "")
-    print(f"Tailoring for {role} at {company} ({cid})")
-    rec = recon.gather(lead, jd_file=args.jd_file, company_url=args.company_url, refresh=args.refresh)
+    log(f"Tailoring for {role} at {company} ({cid})")
+    rec = recon.gather(lead, jd_file=args.jd_file, company_url=args.company_url, refresh=args.refresh, log=log,
+                       jd_text=getattr(args, "jd_text", None))
     jd = rec["jd"]
     notes = recon.notes_for(cid, company, args.notes)
     query = "\n".join([role, role, jd, notes])  # role title counts extra
@@ -57,16 +59,16 @@ def run(canonical_id: str | None, args) -> dict:
 
     cluster = args.cluster or classify(jd + "\n" + notes, role)
     rel = engine.relevance(pool, query, extra)
-    log = bandit.load_log()
+    blog = bandit.load_log()
     rng = random.Random(args.seed)
     golden = None
     if args.golden:
-        g = log["golden"].get(cluster, [])
+        g = blog["golden"].get(cluster, [])
         golden = g[-1] if g else None
         if not golden:
-            print(f"No golden variant for {cluster} yet; sampling normally.")
+            log(f"No golden variant for {cluster} yet; sampling normally.")
 
-    plan = engine.choose(pool, skeleton, cluster, rel, log, rng, golden=golden)
+    plan = engine.choose(pool, skeleton, cluster, rel, blog, rng, golden=golden)
     engine.apply_swaps(plan, pool, swaps_cfg, jd.lower())
     buckets = diff.three_buckets(jd, pool, swaps_cfg, company)
     if args.polish:
@@ -97,13 +99,13 @@ def run(canonical_id: str | None, args) -> dict:
             render.to_docx(blocks, docx_p)
         if "pdf" not in formats:
             break
-        pdf_engine = render.to_pdf(docx_p, html_p, pdf_p)
+        pdf_engine = render.to_pdf(docx_p, html_p, pdf_p, blocks)
         pages = render.page_count(pdf_p) if pdf_engine else None
         if not pages or pages <= 1:
             break
-        print(f"  {pages} pages, trimming one item")
+        log(f"  {pages} pages, trimming one item")
         if not engine.drop_one(plan, mins):
-            print("  WARNING: cannot trim further; CV is longer than one page")
+            log("  WARNING: cannot trim further; CV is longer than one page")
             break
     for f in ("html", "docx"):
         if f not in formats:
@@ -130,33 +132,40 @@ def run(canonical_id: str | None, args) -> dict:
         "notes": notes,
         "cv_files": [str(p.relative_to(store.home())) for p in sorted(out.glob(base + ".*"))],
     })
-    full = store.load(recon.recon_path(cid)) or {}
+    full = recon.load_recon(cid) or {}
     full.update(rec_out)
-    store.save(recon.recon_path(cid), full)
+    store.write_state(recon.recon_key(cid), full)
     store.save(out / f"{store.safe_id(cid)}-recon.json", rec_out)
 
     app = {"canonical_id": cid, "company": company, "role": role, "cluster": cluster, "dna_hash": dna,
            "hook_id": hook, "genes_used": genes_used, "recipe": recipe, "applied_at": bandit.now(),
            "outcome": "PENDING", "out_dir": str(out.relative_to(store.home()))}
+    # Saved recipe so any client (phone page, MCP, another AI) can re-download this exact CV later.
+    store.write_state(f"cv/{store.safe_id(cid)}.json", {
+        "canonical_id": cid, "company": company, "role": role, "dna_hash": dna, "recipe": recipe,
+        "texts": plan.texts, "created_at": bandit.now(), "pages": pages, "dry_run": bool(args.dry_run)})
+    app["texts"] = plan.texts
     if args.dry_run:
-        print("Dry run: not logged to state/applications.json")
+        log("Dry run: not logged to state/applications.json")
     else:
         bandit.record_application(app)
 
-    print(f"  cluster: {cluster}   dna: {dna}   hook: {hook}")
-    print(f"  summary from: {pool['genes'][recipe['summary']]['sources'][0]['file']}")
+    log(f"  cluster: {cluster}   dna: {dna}   hook: {hook}")
+    log(f"  summary from: {pool['genes'][recipe['summary']]['sources'][0]['file']}")
     for c in dict.fromkeys(plan.changes):
-        print(f"  {c}")
-    print(f"  JD diff: {len(buckets['exact'])} exact, {len(buckets['implied'])} implied, {len(buckets['gaps'])} gaps")
+        log(f"  {c}")
+    log(f"  JD diff: {len(buckets['exact'])} exact, {len(buckets['implied'])} implied, {len(buckets['gaps'])} gaps")
     if pdf_engine:
-        print(f"  PDF via {pdf_engine}: {pages} page(s)")
+        log(f"  PDF via {pdf_engine}: {pages} page(s)")
     elif "pdf" in formats:
-        print("  PDF skipped: install LibreOffice or Chrome (DOCX and HTML are written)")
-    print(f"  wrote {out}")
+        log("  PDF skipped: install LibreOffice or Chrome (DOCX and HTML are written)")
+    log(f"  wrote {out}")
     if args.copy_to:
         dest = Path(args.copy_to)
         dest.mkdir(parents=True, exist_ok=True)
         for p in out.glob(base + ".*"):
             if p.suffix in (".pdf", ".docx"):
                 shutil.copy2(p, dest / p.name)
-    return app
+    return {"application": app, "jd_diff": buckets, "changes": list(dict.fromkeys(plan.changes)),
+            "pages": pages, "pdf_engine": pdf_engine, "out_dir": str(out), "base": base,
+            "recon": rec_out, "dry_run": bool(args.dry_run)}

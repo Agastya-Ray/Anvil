@@ -133,9 +133,11 @@ def choose(pool: dict, skeleton: dict, cluster: str, rel: dict[str, float], log:
     live = {gid: g for gid, g in genes.items() if not g["blocked"]}
     scores = {gid: _score(g, rel.get(gid, 0), bandit.sample(log, cluster, gid, rng), cluster)
               for gid, g in live.items()}
-    for gid, g in live.items():  # the project he lists first in his real CVs is his main one
-        if g["kind"] == "project" and any(s["pos"] == 0 for s in g["sources"]):
-            scores[gid] += 0.1
+    for gid, g in live.items():
+        # Projects are not explored: the one listed first in his real CVs is his main one, and the
+        # second ("Earlier web app on the same problem") only reads right next to it.
+        if g["kind"] == "project":
+            scores[gid] = W_REL * rel.get(gid, 0) + (0.5 if any(s["pos"] == 0 for s in g["sources"]) else 0)
 
     def ranked(kind: str, section: str | None = None) -> list[str]:
         ids = [gid for gid, g in live.items() if g["kind"] == kind and (section is None or g["section"] == section)]

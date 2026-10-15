@@ -19,10 +19,12 @@ copyright rights reserved english language read click here linkedin twitter yout
 """.split())
 
 
-def recon_path(canonical_id: str) -> Path:
-    p = store.state() / "recon"
-    p.mkdir(parents=True, exist_ok=True)
-    return p / f"{store.safe_id(canonical_id)}-recon.json"
+def recon_key(canonical_id: str) -> str:
+    return f"recon/{store.safe_id(canonical_id)}-recon.json"
+
+
+def load_recon(canonical_id: str) -> dict | None:
+    return store.read_state(recon_key(canonical_id))
 
 
 def sentences(text: str) -> list[str]:
@@ -92,16 +94,17 @@ def notes_for(canonical_id: str, company: str, inline: str | None) -> str:
 
 
 def gather(lead: dict, jd_file: str | None = None, company_url: str | None = None,
-           refresh: bool = False, log=print) -> dict:
+           refresh: bool = False, log=print, jd_text: str | None = None) -> dict:
     """Returns the recon dict (cached). Raises ember.EmberError only if no JD can be had at all."""
     cid = lead["canonical_id"]
-    path = recon_path(cid)
-    cached = store.load(path) if not refresh else None
-    if cached and not jd_file and not company_url:
+    cached = load_recon(cid) if not refresh else None
+    if cached and not jd_file and not jd_text and not company_url:
         return cached
     jd = ""
     source = ""
-    if jd_file:
+    if jd_text:
+        jd, source = jd_text, "pasted"
+    elif jd_file:
         jd = Path(jd_file).read_text(encoding="utf-8")
         source = f"file:{jd_file}"
     elif cached and cached.get("jd"):
@@ -160,5 +163,5 @@ def gather(lead: dict, jd_file: str | None = None, company_url: str | None = Non
         "company_text": "\n\n".join(p[:4000] for p in pages),
         "scraped_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    store.save(path, data)
+    store.write_state(recon_key(cid), data)
     return data

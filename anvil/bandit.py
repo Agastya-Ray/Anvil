@@ -26,7 +26,7 @@ def now() -> str:
 
 
 def load_log() -> dict:
-    log = store.load(store.state() / "bandit-log.json") or {}
+    log = store.read_state("bandit-log.json") or {}
     for k in ("genes", "hooks", "golden"):
         log.setdefault(k, {})
     log.setdefault("events", [])
@@ -34,15 +34,15 @@ def load_log() -> dict:
 
 
 def save_log(log: dict) -> None:
-    store.save(store.state() / "bandit-log.json", log)
+    store.write_state("bandit-log.json", log)
 
 
 def load_apps() -> list[dict]:
-    return store.load(store.state() / "applications.json") or []
+    return store.read_state("applications.json") or []
 
 
 def save_apps(apps: list[dict]) -> None:
-    store.save(store.state() / "applications.json", apps)
+    store.write_state("applications.json", apps)
 
 
 def arm(log: dict, cluster: str, gene_id: str) -> dict:

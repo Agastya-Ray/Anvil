@@ -7,16 +7,56 @@ Evolutionary resume bandit and recon engine for Swastik's job hunt. Reads leads 
 Tailoring costs 0 LLM tokens. An optional `--polish` pass (~300 tokens, Groq/Gemini) may only swap
 synonyms, and code throws away any line that gains a number or a name.
 
-## Setup
+## Run it anywhere (same pattern as Ember)
+
+| Where | How |
+| --- | --- |
+| Phone or any browser | Open the hosted URL (Vercel). Paste the API key once. Pick a lead, tap **Make CV**, download PDF/Word, log replies under **Sent**. |
+| Claude (web, desktop, phone) | Add a custom connector: `https://<your-anvil>.vercel.app/api/mcp?key=<ANVIL_API_KEY>` |
+| Claude Code / Desktop locally | `claude mcp add anvil -- python -m anvil mcp` (stdio) |
+| ChatGPT / Gemini / any AI with HTTP tools | OpenAPI spec at `/api/v1/openapi.json`, auth `Authorization: Bearer <key>` |
+| PC terminal | `python -m anvil ...` (below), or `python -m anvil serve` for the same page + API on your machine |
+
+REST (all need the key as `Authorization: Bearer`, `X-Anvil-Key` or `?key=`):
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/leads` | Actionable Ember leads |
+| POST | `/api/v1/tailor` | `{canonical_id}` or `{jd_text, company, role}` plus optional `notes, cluster, polish, golden, dry_run` |
+| GET | `/api/v1/cv/<id>.pdf\|docx\|html\|txt` | Download a CV made earlier |
+| POST | `/api/v1/feedback` | `{canonical_id, outcome}` |
+| GET | `/api/v1/applications`, `/api/v1/stats`, `/api/v1/recon?canonical_id=` | Sent list, learning, recon for cold emails |
+| POST | `/api/v1/check` | `{text}`: guardrails on any CV text |
+| POST | `/api/mcp` | MCP (same tools) |
+
+### Deploy on Vercel
+
+1. Import this repo in Vercel (no build settings needed; `vercel.json` routes everything to `api/index.py`).
+2. Environment variables:
+
+| Name | Value |
+| --- | --- |
+| `ANVIL_API_KEYS` | any long secret (comma-separate several) |
+| `EMBER_API_KEY` | Ember's `emb_...` key |
+| `GITHUB_TOKEN` | fine-grained token, **Contents: read and write** on this repo only. Anvil keeps its learning on the `anvil-state` branch (made automatically), like Ember's `leads-data`. |
+| `ANVIL_STATE_REPO` | `Agastya-Ray/Anvil` (default) |
+| `GROQ_API_KEY` / `GEMINI_API_KEY` / `EMBER_LLM_KEYS` | optional, only for `polish` |
+
+On a PC, set `ANVIL_STATE=github` + `GITHUB_TOKEN` to share the same learning as the hosted copy;
+without it the CLI keeps state in local `state/` files.
+
+PDFs are drawn in pure Python (fpdf2 + bundled Carlito font), so they look the same on Vercel and
+on a PC. `ANVIL_PDF_ENGINE=libreoffice` switches to LibreOffice if you prefer.
+
+## Setup (PC)
 
 ```bash
-pip install -r requirements.txt          # python-docx, pypdf
+pip install -r requirements.txt          # python-docx, pypdf, fpdf2
 export EMBER_API_KEY=emb_...             # Ember's Connect page
 export GROQ_API_KEY=...                  # optional, only for --polish (GEMINI_API_KEY / EMBER_LLM_KEYS also work)
 python -m anvil ingest                   # vault/sources/*.docx|.pdf|.md -> vault/gene-pool.json
 ```
 
-PDF output needs LibreOffice (`soffice`) or Chrome/Chromium. Without either you still get DOCX and HTML.
 
 ## Daily use
 
@@ -59,7 +99,7 @@ Each run writes `out/<canonical_id>/`:
 - **Mutation**: a hook (summary + headline + first 2 Fendahl bullets) sent 8+ times with 0 replies is
   deprecated for that cluster; the next CV is forced onto a different summary or bullet order.
 
-State lives in `state/`. Commit it so learning survives between machines. Keep this repo **private**:
+State lives in `state/` locally, or on the `anvil-state` branch when `ANVIL_STATE=github` (default on Vercel). Keep this repo **private**:
 it holds his contact details and where he applied.
 
 ## Guardrails (in code, not prompts)

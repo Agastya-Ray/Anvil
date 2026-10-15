@@ -7,6 +7,8 @@
   anvil ghost-sweep [--days 14]            mark silent applications as ghosted
   anvil stats                              gene weights, hooks, golden variants
   anvil check <file>                       run the guardrails on any CV text (e.g. Gemini output)
+  anvil serve [--host 0.0.0.0 --port 8787] web page + REST + MCP (same API as the hosted one)
+  anvil mcp                                MCP over stdio for Claude Code / Desktop / any MCP client
 """
 from __future__ import annotations
 
@@ -168,6 +170,14 @@ def main(argv=None):
     s = sub.add_parser("check", help="run guardrails on a CV text/markdown file")
     s.add_argument("file")
     s.set_defaults(fn=cmd_check)
+
+    s = sub.add_parser("serve", help="run the web page + REST + MCP server locally")
+    s.add_argument("--host", default="127.0.0.1")
+    s.add_argument("--port", type=int, default=8787)
+    s.set_defaults(fn=lambda a: __import__("anvil.server", fromlist=["serve"]).serve(a.host, a.port))
+
+    s = sub.add_parser("mcp", help="MCP server over stdio")
+    s.set_defaults(fn=lambda a: __import__("anvil.server", fromlist=["stdio"]).stdio())
 
     a = p.parse_args(argv)
     try:
