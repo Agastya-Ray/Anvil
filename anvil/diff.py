@@ -19,6 +19,8 @@ equal opportunity employer english salary location key what's why how you'll we'
 def cv_corpus(pool: dict) -> str:
     parts = []
     for g in pool["genes"].values():
+        if g.get("blocked"):
+            continue
         if g["kind"] == "project":
             parts.append(g["meta"]["title"] + " " + " ".join(g["meta"]["bullets"]))
         else:
@@ -41,7 +43,7 @@ def three_buckets(jd: str, pool: dict, swaps_cfg: dict, company: str = "") -> di
         if same:
             exact.append({"skill": canon, "jd_term": same[0]})
             continue
-        ev = [e for e in IMPLIED_EVIDENCE.get(canon, []) if e.lower() in cv_low]
+        ev = [e for e in IMPLIED_EVIDENCE.get(canon, []) if phrase_in(e.lower(), cv_low)]
         if not ev and cv_hits:
             ev = cv_hits[:1]
         if not ev and canon in verified_extra:

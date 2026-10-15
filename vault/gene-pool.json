@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-15T07:30:12+00:00",
+  "built_at": "2026-10-15T19:43:09+00:00",
   "sources": [
     "01-general-ai-product-analyst.md",
     "02-consulting.md",
@@ -781,7 +781,7 @@
       ],
       "blocked": true,
       "block_reasons": [
-        "[client_scope] Petronas named next to 'pricing' in: '12 percentile), and hands-on CTRM/ETRM experience at Fendahl across trade lifecycle, prici'"
+        "[client_scope] Petronas named next to 'pric' in: 'Analyst with a three-part foundation for commodity trading technology: a BSc in Botany (th'"
       ]
     },
     "g_37ebdc05d4": {
@@ -1132,8 +1132,10 @@
     "xat"
   ],
   "known_numbers": [
+    "0",
     "1",
     "10",
+    "10%",
     "11",
     "12",
     "17",
@@ -1148,17 +1150,23 @@
     "2300",
     "3",
     "4",
-    "40",
+    "40%",
     "5",
-    "50",
+    "50%",
     "56663",
+    "6",
     "63717",
     "7",
     "7.5",
     "9",
     "90",
     "91",
-    "98.12"
+    "98.12",
+    "w:one",
+    "w:six",
+    "w:three",
+    "w:two",
+    "w:zero"
   ],
   "warnings": []
 }

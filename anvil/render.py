@@ -278,7 +278,7 @@ def to_pdf_fpdf(blocks: list[tuple], pdf_path: Path) -> int:
         elif kind == "role":
             pdf.ln(0.6)
             font("B", 10)
-            dw = pdf.get_string_width(b[2]) + 1
+            dw = min(pdf.get_string_width(b[2]) + 1, W * 0.4)
             y = pdf.get_y()
             pdf.multi_cell(W - dw - 2, LH, b[1], align="L", new_x="LMARGIN", new_y="NEXT")
             y2 = pdf.get_y()
@@ -295,8 +295,11 @@ def to_pdf_fpdf(blocks: list[tuple], pdf_path: Path) -> int:
             pdf.multi_cell(W, LH, b[1], align="L", new_x="LMARGIN", new_y="NEXT")
         elif kind == "skill":
             font("", 10)
-            body = b[2].replace("*", "").replace("__", "_").replace("--", "-")
-            pdf.multi_cell(W, LH, f"**{b[1]}:** {body}", markdown=True, align="L", new_x="LMARGIN", new_y="NEXT")
+            font("B", 10)
+            pdf.write(LH, f"{b[1]}: ")
+            font("", 10)
+            pdf.write(LH, b[2])
+            pdf.ln(LH)
     pdf.output(str(pdf_path))
     return pdf.pages_count
 
@@ -309,8 +312,8 @@ def to_pdf(docx_path: Path, html_path: Path, pdf_path: Path, blocks: list[tuple]
         try:
             to_pdf_fpdf(blocks, pdf_path)
             return "fpdf"
-        except ImportError:
-            pass
+        except Exception as e:  # noqa: BLE001 - fall back to another engine
+            print(f"fpdf failed ({type(e).__name__}: {e}); trying another PDF engine")
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
     if soffice and docx_path.exists():
         with tempfile.TemporaryDirectory() as tmp:
@@ -322,10 +325,11 @@ def to_pdf(docx_path: Path, html_path: Path, pdf_path: Path, blocks: list[tuple]
                 return "libreoffice"
     chrome = _chromium()
     if chrome and html_path.exists():
+        pdf_path.unlink(missing_ok=True)
         r = subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox", "--no-pdf-header-footer",
                             f"--print-to-pdf={pdf_path}", html_path.resolve().as_uri()],
                            capture_output=True, timeout=120)
-        if pdf_path.exists():
+        if r.returncode == 0 and pdf_path.exists():
             return "chromium"
     return None
 

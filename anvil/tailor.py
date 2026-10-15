@@ -10,7 +10,15 @@ from . import bandit, diff, engine, ember, guards, ingest, recon, render, store
 from .taxonomy import classify, cluster_scores
 
 
-def load_pool() -> dict:
+def _rel(p: Path) -> str:
+    """Path relative to ANVIL_HOME when inside it (on Vercel the output lives in /tmp)."""
+    try:
+        return str(p.relative_to(store.home()))
+    except ValueError:
+        return str(p)
+
+
+def load_pool(log=print) -> dict:
     pool = store.load(store.vault() / "gene-pool.json")
     if not pool:
         log("No gene pool yet, running ingest first.")
@@ -31,7 +39,7 @@ def resolve_lead(canonical_id: str | None, args) -> dict:
     if not lead:
         raise SystemExit(f"{canonical_id} is not in open-leads.csv. Use `anvil leads` to list ids, "
                          "or pass --jd-file --company --role for a job that is not on the board.")
-    if (lead.get("verdict") or "").upper() not in ember.ACTIONABLE and not args.force:
+    if ember.normalize_verdict(lead.get("verdict")) not in ember.ACTIONABLE and not args.force:
         raise SystemExit(f"{canonical_id} has verdict {lead.get('verdict')}; Anvil only tailors "
                          f"{', '.join(ember.ACTIONABLE)}. Use --force to override.")
     if args.role:
@@ -41,7 +49,7 @@ def resolve_lead(canonical_id: str | None, args) -> dict:
 
 def run(canonical_id: str | None, args, log=print) -> dict:
     skeleton = store.skeleton()
-    pool = load_pool()
+    pool = load_pool(log)
     swaps_cfg = store.load(store.vault() / "swaps.json", {}) or {}
     ghosted = bandit.ghost_sweep()
     if ghosted:
@@ -87,7 +95,7 @@ def run(canonical_id: str | None, args, log=print) -> dict:
     formats = [f.strip() for f in args.formats.split(",") if f.strip()]
     mins = {e["key"]: e["min_bullets"] for e in skeleton["experience"]}
     pdf_engine, pages = None, None
-    for attempt in range(6):
+    for attempt in range(12):
         blocks = render.build_doc(pool, skeleton, plan)
         rep = guards.check_document(render.doc_lines(blocks), skeleton, known_nouns, known_numbers)
         if not rep.ok:
@@ -105,8 +113,9 @@ def run(canonical_id: str | None, args, log=print) -> dict:
             break
         log(f"  {pages} pages, trimming one item")
         if not engine.drop_one(plan, mins):
-            log("  WARNING: cannot trim further; CV is longer than one page")
             break
+    if pages and pages > 1:
+        raise SystemExit(f"CV is {pages} pages even at the minimum bullets per role; not logged as sent.")
     for f in ("html", "docx"):
         if f not in formats:
             (out / f"{base}.{f}").unlink(missing_ok=True)
@@ -130,7 +139,7 @@ def run(canonical_id: str | None, args, log=print) -> dict:
         "matched_hooks": [{"gene": g, "text": plan.texts.get(g, pool["genes"][g]["text"])} for g in top],
         "jd_diff": buckets,
         "notes": notes,
-        "cv_files": [str(p.relative_to(store.home())) for p in sorted(out.glob(base + ".*"))],
+        "cv_files": [_rel(p) for p in sorted(out.glob(base + ".*"))],
     })
     full = recon.load_recon(cid) or {}
     full.update(rec_out)
@@ -139,7 +148,7 @@ def run(canonical_id: str | None, args, log=print) -> dict:
 
     app = {"canonical_id": cid, "company": company, "role": role, "cluster": cluster, "dna_hash": dna,
            "hook_id": hook, "genes_used": genes_used, "recipe": recipe, "applied_at": bandit.now(),
-           "outcome": "PENDING", "out_dir": str(out.relative_to(store.home()))}
+           "outcome": "PENDING", "out_dir": _rel(out)}
     # Saved recipe so any client (phone page, MCP, another AI) can re-download this exact CV later.
     store.write_state(f"cv/{store.safe_id(cid)}.json", {
         "canonical_id": cid, "company": company, "role": role, "dna_hash": dna, "recipe": recipe,

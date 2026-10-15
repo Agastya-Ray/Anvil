@@ -67,8 +67,20 @@ TOOLS = [
 TOOL_BY_NAME = {t["name"]: t for t in TOOLS}
 
 
+def _int(v, default: int, name: str) -> int:
+    try:
+        return int(v) if v not in (None, "") else default
+    except (TypeError, ValueError) as e:
+        raise service.UserError(f"{name} must be a whole number") from e
+
+
 def call_tool(name: str, args: dict, base_url: str, link_key: str = "") -> dict:
     args = args or {}
+    if not isinstance(args, dict):
+        raise service.UserError("arguments must be a JSON object")
+    for k in ("canonical_id", "outcome", "note", "text"):
+        if k in args and args[k] is not None and not isinstance(args[k], str):
+            raise service.UserError(f"{k} must be text")
     if name == "leads":
         return service.leads(bool(args.get("include_all")))
     if name == "tailor":
@@ -80,7 +92,7 @@ def call_tool(name: str, args: dict, base_url: str, link_key: str = "") -> dict:
     if name == "feedback":
         return service.feedback(args.get("canonical_id", ""), args.get("outcome", ""), args.get("note", ""))
     if name == "applications":
-        return service.applications(int(args.get("limit") or 50))
+        return service.applications(_int(args.get("limit"), 50, "limit"))
     if name == "recon":
         return service.get_recon(args.get("canonical_id", ""))
     if name == "stats":
@@ -88,7 +100,7 @@ def call_tool(name: str, args: dict, base_url: str, link_key: str = "") -> dict:
     if name == "check":
         return service.check(args.get("text", ""))
     if name == "ghost_sweep":
-        return service.ghost_sweep(int(args.get("days") or 14))
+        return service.ghost_sweep(_int(args.get("days"), 14, "days"))
     raise service.UserError(f"unknown tool {name}")
 
 
@@ -117,7 +129,7 @@ def authorized(environ: dict) -> tuple[bool, str]:
         return (os.environ.get("ANVIL_ALLOW_OPEN") == "1",
                 "Server has no ANVIL_API_KEYS configured (set it, or ANVIL_ALLOW_OPEN=1 for local use)")
     key, _ = presented_key(environ)
-    ok = any(hmac.compare_digest(key, k) for k in keys) if key else False
+    ok = any(hmac.compare_digest(key.encode(), k.encode()) for k in keys) if key else False
     return ok, "Missing or wrong API key"
 
 
@@ -212,6 +224,8 @@ def app(environ, start):
 # ---------------------------------------------------------------- MCP (Streamable HTTP, JSON responses)
 
 def mcp_handle(msg: dict, base_url: str, link_key: str = "") -> dict | None:
+    if not isinstance(msg, dict):
+        return {"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "invalid request"}}
     mid = msg.get("id")
     meth = msg.get("method", "")
     if mid is None:  # notification

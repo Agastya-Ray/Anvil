@@ -106,6 +106,7 @@ class TestTailorAndBandit(Base):
 
     def _no_ember(self):
         from anvil import ember
+        self.addCleanup(setattr, ember, "company_url_candidates", ember.company_url_candidates)
         ember.company_url_candidates = lambda lead, jd="": []
 
     def test_tailor_writes_guarded_cv_and_logs(self):
@@ -170,6 +171,7 @@ class TestTailorAndBandit(Base):
         from anvil import bandit
         plan = engine.choose(pool, sk, "ba_pa", rel, bandit.load_log(), random.Random(1))
         before = dict(plan.texts)
+        self.addCleanup(setattr, llm, "polish", llm.polish)
         llm.polish = lambda lines, t, a: [ln + " using Salesforce for 40 clients" for ln in lines]
         engine.apply_polish(plan, pool, sk, {}, [], "Acme", "BA")
         self.assertEqual(plan.texts, before)
@@ -187,6 +189,7 @@ class TestEmberLead(Base):
             if "sprinto.com" in url:
                 return {"title": "Just a moment...", "markdown": "Checking your browser"}
             raise ember.EmberError("404")
+        self.addCleanup(setattr, ember, "scrape", ember.scrape)
         ember.scrape = fake
         cid = "lever:sprinto:56d536c2-812c-49be-8421-6ad63c42a273"
         args = SimpleNamespace(jd_file=None, company=None, role=None, url=None, leads_file=str(fx / "open-leads.csv"),
@@ -205,7 +208,7 @@ class TestEmberLead(Base):
 
 
 class TestGitHubState(unittest.TestCase):
-    def test_branch_created_and_sha_conflict_retried(self):
+    def test_branch_created_and_sha_conflict_refused(self):
         import base64
         from anvil import store
         files, branches, calls = {}, {"main"}, []
@@ -248,7 +251,10 @@ class TestGitHubState(unittest.TestCase):
         self.assertIn("anvil-state", branches)
         self.assertEqual(store.read_state("applications.json"), [{"a": 1}])
         files["applications.json"] = ("other", "[]")  # someone else wrote in between
-        store.write_state("applications.json", [{"a": 2}])
+        with self.assertRaises(store.StateError):  # never overwrite someone else's update
+            store.write_state("applications.json", [{"a": 2}])
+        self.assertEqual(store.read_state("applications.json"), [])
+        store.write_state("applications.json", [{"a": 2}])  # after a fresh read it goes through
         self.assertEqual(store.read_state("applications.json"), [{"a": 2}])
         store._gh = None
 
@@ -270,6 +276,7 @@ class TestServer(Base):
         os.environ["ANVIL_API_KEYS"] = "k1"
         self.addCleanup(os.environ.pop, "ANVIL_API_KEYS", None)
         from anvil import ember
+        self.addCleanup(setattr, ember, "company_url_candidates", ember.company_url_candidates)
         ember.company_url_candidates = lambda lead, jd="": []
         self.assertTrue(self.call("GET", "/api/v1/stats", key="nope")[0].startswith("401"))
         jd = TestTailorAndBandit.JD

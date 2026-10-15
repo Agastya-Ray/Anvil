@@ -74,10 +74,10 @@
           "trade data"
         ],
         "forbidden_terms": [
-          "pricing",
-          "price config",
-          "price setup",
-          "configuration"
+          "pric",
+          "tariff",
+          "rate card",
+          "configur"
         ]
       },
       "CBH": {
@@ -123,6 +123,12 @@
     "pivotal"
   ],
   "banned_chars": [
-    "—"
+    "—",
+    "―",
+    "‒",
+    "⸺",
+    "－",
+    "&mdash;",
+    "--"
   ]
 }

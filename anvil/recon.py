@@ -3,6 +3,7 @@ state/recon/<safe_id>-recon.json so Issue 3 (cold email) never re-scrapes."""
 from __future__ import annotations
 
 import re
+import time
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,16 @@ from .taxonomy import STOPWORDS, tokenize
 
 PAIN_SIGNALS = ("you will", "you'll", "help us", "challenge", "problem", "scale", "improve", "own ",
                 "responsible for", "build", "streamline", "automate", "reduce", "fix", "drive", "manage")
+# Pages served by bot walls / JS challenges. Checked on the title and the first part of the body.
+BOT_WALL = re.compile(
+    r"just a moment|checking your browser|enable javascript and cookies|please enable cookies|access denied|"
+    r"attention required|verify you are human|cf-chl|challenge-platform|cdn-cgi/challenge|cloudflare ray id",
+    re.I)
+MIN_JD_CHARS = 200
+MIN_ABOUT_CHARS = 300
+BUDGET_S = 40.0           # whole recon must finish inside this (Vercel's limit is 60 s)
+PER_CALL_CAP_S = 15.0     # ceiling for one Ember call
+MIN_LEFT_OPTIONAL_S = 5.0  # company-site recon is skipped once less than this is left
 GENERIC = set("""
 cookie cookies privacy policy terms contact login sign careers blog news press home menu learn more get started
 started request demo book free trial pricing resources solutions products company customers partners support
@@ -27,6 +38,19 @@ def load_recon(canonical_id: str) -> dict | None:
     return store.read_state(recon_key(canonical_id))
 
 
+def _first_word(name) -> str:
+    parts = (name or "").split()
+    return parts[0].lower() if parts else ""
+
+
+def _bot_wall(title, body) -> bool:
+    return bool(BOT_WALL.search(f"{title or ''} {(body or '')[:600]}"))
+
+
+def _call_timeout(left: float) -> float:
+    return max(1.0, min(PER_CALL_CAP_S, left))
+
+
 def sentences(text: str) -> list[str]:
     text = re.sub(r"[#*_`>\[\]]", " ", text)
     text = re.sub(r"\(https?://[^)]+\)", " ", text)
@@ -35,7 +59,7 @@ def sentences(text: str) -> list[str]:
 
 
 def product_summary(pages: list[str], company: str) -> list[str]:
-    co = company.lower().split()[0] if company else ""
+    co = _first_word(company)
     out = []
     for s in (s for p in pages for s in sentences(p)):
         low = s.lower()
@@ -94,11 +118,20 @@ def notes_for(canonical_id: str, company: str, inline: str | None) -> str:
 
 
 def gather(lead: dict, jd_file: str | None = None, company_url: str | None = None,
-           refresh: bool = False, log=print, jd_text: str | None = None) -> dict:
-    """Returns the recon dict (cached). Raises ember.EmberError only if no JD can be had at all."""
+           refresh: bool = False, log=print, jd_text: str | None = None,
+           budget: float = BUDGET_S) -> dict:
+    """Returns the recon dict (cached). Raises ember.EmberError if no usable JD can be had; a rejected
+    JD is never cached. The whole call is held to `budget` seconds: the JD is required, company-site
+    recon is optional and is dropped first when time runs short."""
+    started = time.monotonic()
+
+    def left() -> float:
+        return budget - (time.monotonic() - started)
+
     cid = lead["canonical_id"]
     cached = load_recon(cid) if not refresh else None
-    if cached and not jd_file and not jd_text and not company_url:
+    if (cached and not jd_file and not jd_text and not company_url
+            and not _bot_wall("", cached.get("jd"))):
         return cached
     jd = ""
     source = ""
@@ -107,44 +140,55 @@ def gather(lead: dict, jd_file: str | None = None, company_url: str | None = Non
     elif jd_file:
         jd = Path(jd_file).read_text(encoding="utf-8")
         source = f"file:{jd_file}"
-    elif cached and cached.get("jd"):
+    elif cached and cached.get("jd") and not _bot_wall("", cached["jd"]):
         jd, source = cached["jd"], cached.get("jd_source", "cache")
     elif lead.get("url"):
-        page = ember.scrape(lead["url"], max_tokens=3000)
+        page = ember.scrape(lead["url"], max_tokens=3000, timeout=_call_timeout(left()))
         jd = page.get("markdown") or page.get("text") or ""
         source = f"ember:{lead['url']}"
-    if len(jd.strip()) < 200:
+        if _bot_wall(page.get("title"), jd):
+            raise ember.EmberError(
+                f"JD page for {cid} ({lead['url']}) is behind a bot wall; nothing was cached. "
+                "Pass the JD text as jd_text (paste it) or use --jd-file.")
+    if len(jd.strip()) < MIN_JD_CHARS:
         raise ember.EmberError(f"JD text for {cid} is too short ({len(jd.strip())} chars). Pass --jd-file.")
 
     pages, used_urls = [], []
+    first = _first_word(lead.get("company"))
     tries = [company_url] if company_url else ember.company_url_candidates(lead, jd)
     for root in tries:
         if not root:
             continue
+        if left() < MIN_LEFT_OPTIONAL_S:
+            log("  recon: time budget nearly spent, skipping remaining company sites")
+            break
         try:
-            home = ember.scrape(root, max_tokens=1500)
+            home = ember.scrape(root, max_tokens=1500, timeout=_call_timeout(left()))
         except ember.EmberError as e:
             log(f"  recon: {root} unreadable ({str(e)[:80]})")
             continue
         title = (home.get("title") or "") + " " + (home.get("markdown") or "")[:600]
-        if re.search(r"just a moment|checking your browser|access denied|attention required", title, re.I):
+        if _bot_wall(home.get("title"), home.get("markdown")):
             log(f"  recon: {root} is behind a bot wall, skipped")
             continue
-        first = (lead.get("company") or "").split()[0].lower() if lead.get("company") else ""
         if not company_url and first and first not in title.lower():
             log(f"  recon: {root} does not look like {lead.get('company')}, skipped")
             continue
         pages.append(home.get("markdown") or "")
         used_urls.append(root)
         for about in ("/about", "/about-us", "/company"):
+            if left() < MIN_LEFT_OPTIONAL_S:
+                break
+            about_url = root.rstrip("/") + about
             try:
-                a = ember.scrape(root.rstrip("/") + about, max_tokens=1500)
-                if len(a.get("markdown") or "") > 300:
-                    pages.append(a["markdown"])
-                    used_urls.append(root.rstrip("/") + about)
-                    break
+                a = ember.scrape(about_url, max_tokens=1500, timeout=_call_timeout(left()))
             except ember.EmberError:
                 continue
+            body = a.get("markdown") or ""
+            if len(body) > MIN_ABOUT_CHARS and not _bot_wall(a.get("title"), body):
+                pages.append(body)
+                used_urls.append(about_url)
+                break
         break
 
     # No readable company site (bot wall, guess failed): the JD's own "about us" text is the fallback.

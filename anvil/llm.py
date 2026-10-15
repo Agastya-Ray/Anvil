@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.error
 import urllib.request
 
 OPENAI_COMPAT = {
@@ -22,51 +21,63 @@ OPENAI_COMPAT = {
 }
 GEMINI_DEFAULT = os.environ.get("ANVIL_GEMINI_MODEL", "gemini-2.5-flash")
 MAX_OUT_TOKENS = 300
+CALL_TIMEOUT_S = 12      # per provider call; polish runs inside a 60 s serverless function
+MAX_PROVIDER_TRIES = 2
 
 
 def candidates() -> list[dict]:
+    """Usable LLM providers in preference order. Malformed EMBER_LLM_KEYS is ignored, never raised."""
     out = []
-    if os.environ.get("GROQ_API_KEY"):
-        out.append({"provider": "groq", "key": os.environ["GROQ_API_KEY"].strip(),
-                    "model": os.environ.get("ANVIL_GROQ_MODEL")})
-    if os.environ.get("GEMINI_API_KEY"):
-        out.append({"provider": "google", "key": os.environ["GEMINI_API_KEY"].strip(), "model": GEMINI_DEFAULT})
+    groq = os.environ.get("GROQ_API_KEY", "").strip()
+    if groq:
+        out.append({"provider": "groq", "key": groq, "model": os.environ.get("ANVIL_GROQ_MODEL")})
+    gemini = os.environ.get("GEMINI_API_KEY", "").strip()
+    if gemini:
+        out.append({"provider": "google", "key": gemini, "model": GEMINI_DEFAULT})
     raw = os.environ.get("EMBER_LLM_KEYS", "")
     if raw.strip():
         try:
-            for e in json.loads(raw):
-                if isinstance(e, dict) and e.get("provider") and e.get("key"):
-                    out.append({"provider": e["provider"], "key": e["key"], "model": e.get("model"),
-                                "baseUrl": e.get("baseUrl")})
-        except json.JSONDecodeError:
-            pass
+            entries = json.loads(raw)
+        except Exception:  # noqa: BLE001 - bad config must not break tailoring
+            entries = []
+        if isinstance(entries, list):
+            for e in entries:
+                if not isinstance(e, dict):
+                    continue
+                prov, key = e.get("provider"), e.get("key")
+                if not (isinstance(prov, str) and prov.strip() and isinstance(key, str) and key.strip()):
+                    continue
+                model = e.get("model") if isinstance(e.get("model"), str) else None
+                base = e.get("baseUrl") if isinstance(e.get("baseUrl"), str) else None
+                out.append({"provider": prov.strip(), "key": key.strip(), "model": model, "baseUrl": base})
     return out
 
 
-def _post(url: str, body: dict, headers: dict, timeout: int = 40) -> dict:
+def _post(url: str, body: dict, headers: dict, timeout: float = CALL_TIMEOUT_S) -> dict:
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST",
                                  headers={"content-type": "application/json", **headers})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read().decode())
+        return json.loads(r.read().decode("utf-8"))
 
 
-def _call(c: dict, system: str, user: str) -> str:
+def _call(c: dict, system: str, user: str, timeout: float = CALL_TIMEOUT_S) -> str:
     p = c["provider"]
     if p == "google":
         model = c.get("model") or GEMINI_DEFAULT
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={c['key']}"
+        # Key goes in a header, never in the URL (URLs end up in logs and error messages).
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         cfg = {"temperature": 0.2, "maxOutputTokens": MAX_OUT_TOKENS, "responseMimeType": "application/json"}
         if "2.5" in model:
             cfg["thinkingConfig"] = {"thinkingBudget": 0}
         data = _post(url, {"systemInstruction": {"parts": [{"text": system}]},
                            "contents": [{"role": "user", "parts": [{"text": user}]}],
-                           "generationConfig": cfg}, {})
+                           "generationConfig": cfg}, {"x-goog-api-key": c["key"]}, timeout=timeout)
         return data["candidates"][0]["content"]["parts"][0]["text"]
     if p == "anthropic":
         data = _post("https://api.anthropic.com/v1/messages",
                      {"model": c.get("model") or "claude-3-5-haiku-latest", "max_tokens": MAX_OUT_TOKENS,
                       "system": system, "messages": [{"role": "user", "content": user}]},
-                     {"x-api-key": c["key"], "anthropic-version": "2023-06-01"})
+                     {"x-api-key": c["key"], "anthropic-version": "2023-06-01"}, timeout=timeout)
         return data["content"][0]["text"]
     base, model = OPENAI_COMPAT.get(p, (c.get("baseUrl"), c.get("model")))
     base = c.get("baseUrl") or base
@@ -75,7 +86,7 @@ def _call(c: dict, system: str, user: str) -> str:
     data = _post(base.rstrip("/") + "/chat/completions",
                  {"model": c.get("model") or model, "temperature": 0.2, "max_tokens": MAX_OUT_TOKENS,
                   "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]},
-                 {"authorization": f"Bearer {c['key']}"})
+                 {"authorization": f"Bearer {c['key']}"}, timeout=timeout)
     return data["choices"][0]["message"]["content"]
 
 
@@ -90,19 +101,24 @@ SYSTEM = (
 
 
 def polish(lines: list[str], jd_terms: list[str], approved: list[str]) -> list[str] | None:
-    """Returns rewritten lines (same length) or None if no key / every key failed."""
+    """Returns rewritten lines (same length) or None if no key / every tried provider failed.
+    Never raises: a polish failure must not break tailoring."""
     if not lines:
         return lines
     user = json.dumps({"job_terms": jd_terms[:25], "approved_terms": approved[:20], "lines": lines},
                       ensure_ascii=False)
-    for c in candidates():
+    try:
+        tries = candidates()[:MAX_PROVIDER_TRIES]
+    except Exception:  # noqa: BLE001
+        return None
+    for c in tries:
         try:
-            txt = _call(c, SYSTEM, user)
+            txt = _call(c, SYSTEM, user, timeout=CALL_TIMEOUT_S)
             m = re.search(r"\{.*\}", txt, re.S)
             data = json.loads(m.group(0) if m else txt)
             out = data.get("lines") if isinstance(data, dict) else data
             if isinstance(out, list) and len(out) == len(lines) and all(isinstance(x, str) for x in out):
                 return [x.strip() for x in out]
-        except (urllib.error.URLError, KeyError, IndexError, ValueError, RuntimeError, TimeoutError):
+        except Exception:  # noqa: BLE001 - try the next provider
             continue
     return None

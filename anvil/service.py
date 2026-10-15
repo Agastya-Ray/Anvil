@@ -157,6 +157,8 @@ def ghost_sweep(days: int = bandit.GHOST_DAYS) -> dict:
 
 
 def check(text: str) -> dict:
+    if not (text or "").strip():
+        raise UserError("Give the CV text to check.")
     pool, sk = _pool(), store.skeleton()
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as f:
         f.write(text)

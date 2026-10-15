@@ -26,6 +26,9 @@ SECTION_PATTERNS = [
 DATE_RE = re.compile(r"((jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{4}|present|\b(19|20)\d{2}\b)", re.I)
 BULLET_RE = re.compile(r"^\s*([-*•▪●◦·]|\d+[.)])\s+")
 MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+SENTENCE_END_RE = re.compile(r"[.!?…]$")
+SKILL_LABEL_RE = re.compile(r"^[A-Za-z][\w &/()+,-]{0,40}:\s")
+EMPTY_SKELETON = {"experience": []}
 
 
 def norm(text: str) -> str:
@@ -52,7 +55,63 @@ def angle_from_name(name: str) -> str:
 
 # ---------------------------------------------------------------- readers
 
-def read_lines(path: Path) -> list[str]:
+def _company_hit(line: str, skeleton: dict) -> bool:
+    """True if the line names one of the locked experience companies (their `match` names)."""
+    for exp in skeleton.get("experience", []):
+        for m in exp["match"]:
+            if re.search(r"(?<![A-Za-z])" + re.escape(m) + r"(?![A-Za-z])", line):
+                return True
+    return False
+
+
+def _role_like(line: str, skeleton: dict) -> bool:
+    """Strict role-header test used where bullet status is unknown (docx, pdf joins)."""
+    if SENTENCE_END_RE.search(line.strip()):
+        return False
+    has_date_or_dash = bool(DATE_RE.search(line) or re.search(r"–| - |\|", line))
+    return has_date_or_dash and (_company_hit(line, skeleton) or "|" in line)
+
+
+def _has_numbering(p) -> bool:
+    if p._p.pPr is not None and p._p.pPr.numPr is not None:
+        return True
+    st = p.style
+    while st is not None:
+        spPr = st.element.pPr
+        if spPr is not None and spPr.numPr is not None:
+            return True
+        st = st.base_style
+    return False
+
+
+def _join_wrapped(raw: list[str], skeleton: dict) -> list[str]:
+    """Undo pypdf's wrapped lines: continuation text joins the previous bullet or skill group."""
+    out: list[str] = []
+    section = None
+    for r in raw:
+        line = re.sub(r"\s+", " ", r).strip()
+        if not line:
+            continue
+        sec = section_of(line)
+        if sec:
+            section = sec
+            out.append(line)
+            continue
+        prev = out[-1] if out else None
+        if prev is not None and not BULLET_RE.match(line) and not SKILL_LABEL_RE.match(line) \
+                and not _role_like(line, skeleton):
+            if section in ("experience", "projects") and BULLET_RE.match(prev) and not SENTENCE_END_RE.search(prev):
+                out[-1] = prev + " " + line
+                continue
+            if section == "skills" and ":" in prev and ":" not in line:
+                out[-1] = prev + " " + line
+                continue
+        out.append(line)
+    return out
+
+
+def read_lines(path: Path, skeleton: dict | None = None) -> list[str]:
+    skeleton = skeleton or EMPTY_SKELETON
     ext = path.suffix.lower()
     if ext in (".md", ".txt"):
         raw = path.read_text(encoding="utf-8")
@@ -66,27 +125,42 @@ def read_lines(path: Path) -> list[str]:
         return lines
     if ext == ".docx":
         import docx  # python-docx
+        from docx.oxml.ns import qn
+        from docx.table import Table
+        from docx.text.paragraph import Paragraph
         d = docx.Document(str(path))
-        lines = []
-        for p in d.paragraphs:
+        lines: list[str] = []
+
+        def add_para(p) -> None:
             text = p.text.strip()
             if not text:
-                continue
-            is_list = "list" in (p.style.name or "").lower() or p._p.pPr is not None and p._p.pPr.numPr is not None
+                return
+            if _role_like(text, skeleton):  # a role header is never a bullet
+                lines.append(BULLET_RE.sub("", text).strip())
+                return
+            is_list = _has_numbering(p) or bool(BULLET_RE.match(text))
             lines.append(("- " + text) if is_list and not BULLET_RE.match(text) else text)
-        for t in d.tables:  # some templates put the header in a table
-            for row in t.rows:
-                for cell in row.cells:
-                    for p in cell.paragraphs:
-                        if p.text.strip():
-                            lines.insert(0, p.text.strip())
+
+        # Walk the body in document order, paragraphs and tables interleaved.
+        for child in d.element.body.iterchildren():
+            if child.tag == qn("w:p"):
+                add_para(Paragraph(child, d))
+            elif child.tag == qn("w:tbl"):  # some templates put the header in a table
+                for row in Table(child, d).rows:
+                    seen: list = []
+                    for cell in row.cells:
+                        if any(cell._tc is s for s in seen):  # merged cells repeat
+                            continue
+                        seen.append(cell._tc)
+                        for p in cell.paragraphs:
+                            add_para(p)
         return lines
     if ext == ".pdf":
         from pypdf import PdfReader
-        lines = []
+        raw: list[str] = []
         for page in PdfReader(str(path)).pages:
-            lines.extend((page.extract_text() or "").splitlines())
-        return lines
+            raw.extend((page.extract_text() or "").splitlines())
+        return _join_wrapped(raw, skeleton)
     raise ValueError(f"unsupported file type: {path.name}")
 
 
@@ -128,11 +202,13 @@ def parse_cv(lines: list[str], skeleton: dict) -> dict:
                 continue
             if "@" in line or re.search(r"\+?\d[\d\s]{8,}", line):
                 continue  # contact line: locked, never taken from CVs
-            cv["headline"] = text
+            if cv["headline"] is None:  # the first non-contact line is the headline
+                cv["headline"] = text
         elif section == "summary":
             cv["summary"].append(text)
         elif section == "experience":
-            if not is_bullet and (DATE_RE.search(line) or "–" in line or " - " in line) and "|" in line:
+            if not is_bullet and (_company_hit(line, skeleton)
+                                  or (DATE_RE.search(line) or "–" in line or " - " in line) and "|" in line):
                 role_key = None
                 for exp in skeleton["experience"]:
                     if any(re.search(r"(?<![A-Za-z])" + re.escape(m) + r"(?![A-Za-z])", line) for m in exp["match"]):
@@ -197,7 +273,7 @@ def build_pool(paths: list[Path], skeleton: dict, overrides: dict | None = None)
         return gid
 
     for path in paths:
-        lines = read_lines(path)
+        lines = read_lines(path, skeleton)
         cv = parse_cv(lines, skeleton)
         angle = angle_from_name(path.stem)
         src = path.name
@@ -226,20 +302,31 @@ def build_pool(paths: list[Path], skeleton: dict, overrides: dict | None = None)
     known_nouns, known_numbers = _known_vocab(all_text, skeleton)
 
     # Guardrails at ingest: block anything that breaks a hard rule.
-    for g in genes.values():
-        body = g["text"] if g["kind"] != "project" else " ".join(g["meta"]["bullets"])
+    hard_fail: set[str] = set()
+    for gid, g in genes.items():
+        # A project's title is checked along with its bullets (it is shown in the CV).
+        if g["kind"] == "project":
+            body = " ".join([g["meta"]["title"]] + g["meta"]["bullets"])
+        else:
+            body = g["text"]
         rep = guards.check_style(body, skeleton)
         rep.extend(guards.check_client_scope(body, skeleton))
         if g["kind"] == "headline" and skeleton["title"].lower() not in body.lower():
             # Headlines are only used as a tagline after the locked title, so this is a note, not a block.
             g["note"] = "headline lacks the locked title; rendered after 'Product Analyst' as a tagline"
         if not rep.ok:
+            hard_fail.add(gid)
             g["blocked"] = True
             g["block_reasons"] = [str(v) for v in rep.violations]
     for gid in overrides.get("unblock", []):
-        if gid in genes:
-            genes[gid]["blocked"] = False
-            genes[gid]["block_reasons"].append("unblocked by vault/overrides.json")
+        if gid not in genes:
+            continue
+        if gid in hard_fail:
+            # Style and client-scope rules cannot be overridden by a config file.
+            genes[gid]["block_reasons"].append("unblock refused by vault/overrides.json: fails style/client-scope rule")
+            continue
+        genes[gid]["blocked"] = False
+        genes[gid]["block_reasons"].append("unblocked by vault/overrides.json")
     for gid in overrides.get("block", []):
         if gid in genes:
             genes[gid]["blocked"] = True

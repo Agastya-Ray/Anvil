@@ -1,0 +1,57 @@
+{
+  "canonical_id": "manual:sprinto:125ad0ce",
+  "company": "Sprinto",
+  "role": "Business Analyst",
+  "dna_hash": "49cd0960df81",
+  "recipe": {
+    "cluster": "revops_ops",
+    "headline": "g_37ebdc05d4",
+    "summary": "g_5119fba5a2",
+    "bullets": {
+      "fendahl": [
+        "g_6bc666ce89",
+        "g_088b1a88dd",
+        "g_fe5abf97e9",
+        "g_e534921f1a",
+        "g_8989e1bc73"
+      ],
+      "ey": [
+        "g_10e8a14226",
+        "g_d768e333c8",
+        "g_1d41d77000"
+      ],
+      "startup_odisha": [
+        "g_f8e59192de",
+        "g_82e74ca644",
+        "g_f851ad06af"
+      ]
+    },
+    "projects": [
+      "g_eaae20b0d9"
+    ],
+    "skills": [
+      "g_1e4297c0dd",
+      "g_860738e333",
+      "g_749ab4d86d",
+      "g_426d86bd9a",
+      "g_f4eee3e92f"
+    ],
+    "section_order": [
+      "summary",
+      "experience",
+      "education",
+      "projects",
+      "skills"
+    ],
+    "swaps": [
+      "g_1d41d77000:5"
+    ],
+    "polished": []
+  },
+  "texts": {
+    "g_1d41d77000": "Created sample KPI reporting dashboards in Power BI and Excel to evaluate the potential performance of the client’s programs and partnerships and to monitor financial sustainability strategies."
+  },
+  "created_at": "2026-10-15T19:44:17+00:00",
+  "pages": 1,
+  "dry_run": true
+}

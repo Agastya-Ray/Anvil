@@ -26,10 +26,10 @@ a{color:var(--acc)}h3{margin:4px 0;font-size:16px}ul{margin:4px 0 4px 18px;paddi
 <main id="main"></main>
 <script>
 const $=s=>document.querySelector(s);let KEY='';try{KEY=localStorage.getItem('anvilKey')||''}catch(e){}
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const safeUrl=u=>/^https?:\/\//i.test(String(u||''))?u:'#';const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function api(path,body){const r=await fetch(path,{method:body?'POST':'GET',headers:{'content-type':'application/json','authorization':'Bearer '+KEY},body:body?JSON.stringify(body):undefined});
  const j=await r.json().catch(()=>({success:false,error:'HTTP '+r.status}));if(!j.success)throw new Error(j.error||('HTTP '+r.status));return j.data}
-const TABS={leads:'Leads',paste:'Paste a JD',sent:'Sent',learn:'Learned',key:'Key'};let tab='leads';
+const TABS={leads:'Leads',paste:'Paste a JD',sent:'Sent',learn:'Learned',key:'Key'};let tab='leads';let LEADS=[],APPS=[];
 function nav(){$('#tabs').innerHTML=Object.entries(TABS).map(([k,v])=>`<button class="${k==tab?'on':''}" onclick="go('${k}')">${v}</button>`).join('')}
 function go(t){tab=t;nav();({leads,paste,sent,learn,key:keyTab})[t]()}
 function keyTab(){$('#main').innerHTML=`<div class="card"><label>API key (same as ANVIL_API_KEYS on the server)</label><input id="k" type="password" value="${esc(KEY)}"><button class="pri" onclick="saveKey()">Save</button></div>`}
@@ -37,12 +37,12 @@ function saveKey(){KEY=$('#k').value.trim();try{localStorage.setItem('anvilKey',
 async function ping(){try{const s=await api('/api/v1/status');$('#st').textContent=s.authorized?`${s.genes} genes · state: ${s.state_backend}`+(s.ember_key?'':' · no Ember key'):'key needed'}catch(e){$('#st').textContent='key needed'}}
 function busy(msg){$('#main').innerHTML=`<div class="card mut">${esc(msg)}</div>`}
 function fail(e){$('#main').insertAdjacentHTML('afterbegin',`<div class="card err">${esc(e.message||e)}</div>`)}
-async function leads(){busy('Loading leads from Ember…');try{const d=await api('/api/v1/leads');
+async function leads(){busy('Loading leads from Ember…');try{const d=await api('/api/v1/leads');LEADS=d.leads;
  $('#main').innerHTML=`<p class="mut">${d.count} lead(s) ready to tailor</p>`+d.leads.map((l,i)=>`<div class="card"><h3>${esc(l.role)}</h3>
  <div class="row"><b>${esc(l.company)}</b><span class="tag">${esc(l.verdict)}</span>${l.anvil_status?`<span class="tag">${esc(l.anvil_status)}</span>`:''}</div>
- <div class="mut">${esc(l.location)} · ${esc(l.pay)} · <a href="${esc(l.url)}" target="_blank" rel="noopener">job page</a></div>
+ <div class="mut">${esc(l.location)} · ${esc(l.pay)} · <a href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">job page</a></div>
  <input placeholder="Optional notes (e.g. from the hiring manager's post)" id="n${i}">
- <div class="row"><button class="pri" onclick='make(${JSON.stringify({canonical_id:l.canonical_id})},"n${i}")'>Make CV</button>
+ <div class="row"><button class="pri" onclick="make({canonical_id:LEADS[${i}].canonical_id},'n${i}')">Make CV</button>
  <label><input type="checkbox" id="d${i}" style="width:auto"> just preview (don't log as sent)</label></div></div>`).join('')}catch(e){$('#main').innerHTML='';fail(e)}}
 async function make(body,notesId){const i=notesId.slice(1);body.notes=$('#'+notesId)?.value||undefined;body.dry_run=$('#d'+i)?.checked||false;
  busy('Reading the JD and company site, building the CV…');try{show(await api('/api/v1/tailor',body))}catch(e){$('#main').innerHTML='';fail(e)}}
@@ -61,10 +61,10 @@ function paste(){$('#main').innerHTML=`<div class="card"><label>Company</label><
  <label>Notes (optional)</label><input id="n_p"><label><input type="checkbox" id="d_p" style="width:auto"> just preview</label>
  <button class="pri" onclick="pasteGo()">Make CV</button></div>`}
 function pasteGo(){make({company:$('#pc').value,role:$('#pr').value,url:$('#pu').value||undefined,jd_text:$('#pj').value},'n_p')}
-async function sent(){busy('Loading…');try{const d=await api('/api/v1/applications');
- $('#main').innerHTML=`<p class="mut">Tap what the company did. Replies teach Anvil which CV versions work.</p>`+d.applications.map(a=>`<div class="card"><h3>${esc(a.role)}</h3>
+async function sent(){busy('Loading…');try{const d=await api('/api/v1/applications');APPS=d.applications;
+ $('#main').innerHTML=`<p class="mut">Tap what the company did. Replies teach Anvil which CV versions work.</p>`+d.applications.map((a,ai)=>`<div class="card"><h3>${esc(a.role)}</h3>
  <div class="row"><b>${esc(a.company)}</b><span class="tag">${esc(a.outcome)}</span><span class="tag">${esc(a.cluster)}</span></div>
- <div class="mut">${esc((a.applied_at||'').slice(0,10))}</div><div class="row" style="margin-top:6px">${['callback','interview','offer','rejected'].map(o=>`<button onclick='fb(${JSON.stringify(a.canonical_id)},"${o}")'>${o}</button>`).join('')}</div></div>`).join('')}catch(e){$('#main').innerHTML='';fail(e)}}
+ <div class="mut">${esc((a.applied_at||'').slice(0,10))}</div><div class="row" style="margin-top:6px">${['callback','interview','offer','rejected'].map(o=>`<button onclick="fb(APPS[${ai}].canonical_id,'${o}')">${o}</button>`).join('')}</div></div>`).join('')}catch(e){$('#main').innerHTML='';fail(e)}}
 async function fb(id,o){try{await api('/api/v1/feedback',{canonical_id:id,outcome:o});sent()}catch(e){fail(e)}}
 async function learn(){busy('Loading…');try{const s=await api('/api/v1/stats');let h='';
  for(const [c,o] of Object.entries(s.applications_by_cluster))h+=`<div class="card"><h3>${esc(c)}</h3><div class="mut">${Object.entries(o).map(([k,v])=>esc(k)+' '+v).join(' · ')}</div>${(s.learned[c]||[]).length?list(s.learned[c],x=>`<li>${x.mean} · ${esc(x.text)}</li>`):''}</div>`;

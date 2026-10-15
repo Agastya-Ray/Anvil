@@ -181,27 +181,55 @@ def choose(pool: dict, skeleton: dict, cluster: str, rel: dict[str, float], log:
             if ok:
                 recipe["bullets"][k] = ok
         recipe["section_order"] = r.get("section_order", order)
+        # Genes that left the pool are not backfilled by the replay: top each role up from the ranking
+        # to its minimum, and cut it to its maximum.
+        for exp in skeleton["experience"]:
+            key = exp["key"]
+            cur = [i for i in recipe["bullets"].get(key, []) if i in live]
+            for gid in ranked("bullet", key):
+                if len(cur) >= exp["min_bullets"]:
+                    break
+                if gid not in cur:
+                    cur.append(gid)
+            recipe["bullets"][key] = cur[: exp["max_bullets"]]
 
     # Escape deprecated hooks (8+ sends, 0 replies): mutate summary, then top-bullet order.
+    # If no variant escapes, the original recipe is restored.
     if bandit.is_deprecated(log, cluster, hook_id(recipe)):
+        orig_summary = recipe["summary"]
+        orig_fendahl = list(recipe["bullets"].get("fendahl", []))
         fixed = False
         for s in summaries:
             recipe["summary"] = s
             if not bandit.is_deprecated(log, cluster, hook_id(recipe)):
                 fixed = True
                 break
-        fb = recipe["bullets"].get("fendahl", [])
+        fb = orig_fendahl
         if not fixed and len(fb) >= 3:
             for j in range(2, len(fb)):
                 trial = fb[:]
                 trial[1], trial[j] = trial[j], trial[1]
                 recipe["bullets"]["fendahl"] = trial
                 if not bandit.is_deprecated(log, cluster, hook_id(recipe)):
+                    fixed = True
                     break
+        if not fixed:
+            recipe["summary"] = orig_summary
+            recipe["bullets"]["fendahl"] = orig_fendahl
 
     plan = Plan(cluster=cluster, recipe=recipe, scores=scores)
     _fit_page(plan, pool, skeleton, page_lines)
+    assert_bullet_bounds(recipe, skeleton)
     return plan
+
+
+def assert_bullet_bounds(recipe: dict, skeleton: dict) -> None:
+    """Every experience block must stay within its min/max bullets (skeleton.json)."""
+    for exp in skeleton["experience"]:
+        n = len(recipe["bullets"].get(exp["key"], []))
+        if not exp["min_bullets"] <= n <= exp["max_bullets"]:
+            raise AssertionError(
+                f"{exp['key']} has {n} bullets; skeleton allows {exp['min_bullets']}-{exp['max_bullets']}")
 
 
 def _fit_page(plan: Plan, pool: dict, skeleton: dict, page_lines: int) -> None:

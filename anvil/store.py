@@ -105,16 +105,24 @@ class _GitHub:
             raise StateError("ANVIL_STATE=github needs GITHUB_TOKEN (contents read/write on " + self.repo + ")")
         self.shas: dict[str, str] = {}
 
-    def _req(self, method: str, path: str, body: dict | None = None):
+    def _req(self, method: str, path: str, body: dict | None = None, raw: bool = False):
         url = f"https://api.github.com/repos/{self.repo}/{path}"
+        accept = "application/vnd.github.raw+json" if raw else "application/vnd.github+json"
         req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body else None, headers={
-            "authorization": f"Bearer {self.token}", "accept": "application/vnd.github+json",
+            "authorization": f"Bearer {self.token}", "accept": accept,
             "user-agent": "anvil", "x-github-api-version": "2022-11-28"})
         try:
             with urllib.request.urlopen(req, timeout=20) as r:
-                return r.status, json.loads(r.read().decode() or "null")
+                text = r.read().decode() or "null"
+                return r.status, json.loads(text)
         except urllib.error.HTTPError as e:
-            return e.code, json.loads(e.read().decode() or "null")
+            text = e.read().decode(errors="replace")
+            try:
+                return e.code, json.loads(text or "null")
+            except ValueError:
+                return e.code, text[:200]
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            raise StateError(f"GitHub unreachable: {e}") from e
 
     def get(self, rel: str):
         code, data = self._req("GET", f"contents/state/{rel}?ref={self.branch}")
@@ -124,6 +132,12 @@ class _GitHub:
         if code != 200:
             raise StateError(f"GitHub read {rel}: HTTP {code} {str(data)[:200]}")
         self.shas[rel] = data["sha"]
+        if data.get("encoding") == "none" or (not data.get("content") and data.get("size")):
+            # Files over 1 MB come back without content; ask for the raw file instead.
+            code, raw = self._req("GET", f"contents/state/{rel}?ref={self.branch}", raw=True)
+            if code != 200:
+                raise StateError(f"GitHub read {rel}: HTTP {code}")
+            return raw
         return json.loads(base64.b64decode(data["content"]).decode("utf-8"))
 
     def _ensure_branch(self):
@@ -155,9 +169,10 @@ class _GitHub:
             if code == 404 and attempt == 0:
                 self._ensure_branch()
                 continue
-            if code in (409, 422):  # stale sha: someone else wrote; re-read sha and retry
+            if code in (409, 422) and "sha" in body:
+                # Someone else wrote since we read it. Overwriting would lose their update.
                 self.shas.pop(rel, None)
-                continue
+                raise StateError(f"{rel} was updated by another request at the same moment; try again")
             raise StateError(f"GitHub write {rel}: HTTP {code} {str(out)[:200]}")
         raise StateError(f"GitHub write {rel}: kept conflicting")
 
