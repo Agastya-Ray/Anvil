@@ -1,0 +1,1164 @@
+{
+  "built_at": "2026-10-15T07:30:12+00:00",
+  "sources": [
+    "01-general-ai-product-analyst.md",
+    "02-consulting.md",
+    "03-commodity-moat.md",
+    "04-business-product-analyst.md"
+  ],
+  "genes": {
+    "g_91b2d0dc5c": {
+      "id": "g_91b2d0dc5c",
+      "kind": "summary",
+      "section": "summary",
+      "text": "Product Analyst in CTRM (commodity trading and risk management) with hands-on AI experience: prompt engineering on Fusion AI, the AI capability on Fendahl’s Fusion CTRM platform, and two AI-assisted web apps built and deployed for job seekers. Daily LLM user (Claude, ChatGPT, Grok, DeepSeek) for research, data analysis and drafting. Client exposure: Petronas and CBH across implementation, business analysis and pre-sales. PGDM Finance (IMT Nagpur); XAT 98.12 percentile.",
+      "clusters": [
+        "ba_pa",
+        "commodity",
+        "general",
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_fe5abf97e9": {
+      "id": "g_fe5abf97e9",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Engineered prompts for Fusion AI, the AI capability on the Fusion CTRM system, to retrieve trade results, cashflows and trade-capture and deal-lifecycle details.",
+      "clusters": [
+        "commodity",
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 0
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 6
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 4
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 4
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_e534921f1a": {
+      "id": "g_e534921f1a",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Selected twice within six months: inducted from the 12-member trainee cohort into the Business Analysis team, then selected for Pre-Sales (final pick of 2).",
+      "clusters": [
+        "ba_pa",
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 1
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 3
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 5
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 5
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_6bc666ce89": {
+      "id": "g_6bc666ce89",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Delivered client work across the portfolio: CBH – functional and workflow testing, trade creation, bug reproduction and documentation; Petronas – trade data import/export; an oil-trading client – functional ownership of the documents module and production data migration.",
+      "clusters": [
+        "ba_pa",
+        "commodity",
+        "implementation",
+        "revops_ops"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 2
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 2
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_8989e1bc73": {
+      "id": "g_8989e1bc73",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Cleared 7 of 17 queued defects in a 9-hour release-crunch session, including one defect with 7 nested sub-issues, and surfaced 2 new defects; cleared 11 more defects in 4 hours the next day.",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 3
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 5
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 3
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 1
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_088b1a88dd": {
+      "id": "g_088b1a88dd",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Manually corrected 2,300+ rows of client trade data where automation was unavailable (the workstation could not run Power Query and the data was highly sensitive), while holding the delivery timeline.",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 4
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 4
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 2
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 3
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_9f68ca17c2": {
+      "id": "g_9f68ca17c2",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Delivered the documents-module workstream and a 181-record production data migration ahead of the timeline committed in client sync meetings.",
+      "clusters": [
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 5
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 2
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 1
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_d21bdc3232": {
+      "id": "g_d21bdc3232",
+      "kind": "bullet",
+      "section": "fendahl",
+      "text": "Built product demo environments and materials for prospective clients in pre-sales cycles.",
+      "clusters": [
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 6
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 1
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 6
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 6
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_10e8a14226": {
+      "id": "g_10e8a14226",
+      "kind": "bullet",
+      "section": "ey",
+      "text": "Identified and proposed new revenue streams for the client, including tiered incubation program fees, corporate innovation partnerships, investor network monetisation and CSR-funded initiatives; assessed financial implications through scenario-analysis modelling.",
+      "clusters": [
+        "consulting"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 0
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_1d41d77000": {
+      "id": "g_1d41d77000",
+      "kind": "bullet",
+      "section": "ey",
+      "text": "Created sample KPI dashboards in Power BI and Excel to evaluate the potential performance of the client’s programs and partnerships and to monitor financial sustainability strategies.",
+      "clusters": [
+        "revops_ops"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 1
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 1
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 1
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 1
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_d768e333c8": {
+      "id": "g_d768e333c8",
+      "kind": "bullet",
+      "section": "ey",
+      "text": "Researched global best practices for innovation hubs, benchmarking revenue diversification models across leading ecosystems while considering financial risk factors.",
+      "clusters": [
+        "consulting"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 2
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 2
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 2
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 2
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_f8e59192de": {
+      "id": "g_f8e59192de",
+      "kind": "bullet",
+      "section": "startup_odisha",
+      "text": "Coordinated across departments to resolve data quality discrepancies and gather data for funding decisions, with zero tolerance for documentation errors.",
+      "clusters": [
+        "revops_ops"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 0
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_48068f8083": {
+      "id": "g_48068f8083",
+      "kind": "bullet",
+      "section": "startup_odisha",
+      "text": "Cut departmental approval time by 50% by proposing and implementing workflow changes.",
+      "clusters": [
+        "revops_ops"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 1
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 1
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 1
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 1
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_aa9042bfca": {
+      "id": "g_aa9042bfca",
+      "kind": "bullet",
+      "section": "startup_odisha",
+      "text": "Assisted in clearing backlogs under leadership guidance, reducing the backlog to under 10%.",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 2
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 2
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 2
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 2
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_82e74ca644": {
+      "id": "g_82e74ca644",
+      "kind": "bullet",
+      "section": "startup_odisha",
+      "text": "Proposed and implemented an Excel-based evaluation framework for handling bulk grant applications, reducing process time further.",
+      "clusters": [
+        "revops_ops"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 3
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 3
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 3
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 3
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_f851ad06af": {
+      "id": "g_f851ad06af",
+      "kind": "bullet",
+      "section": "startup_odisha",
+      "text": "Served as single point of contact for stakeholders, ensuring prompt communication and issue escalation and resolution; commended by senior leadership for notable work and ethics.",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 4
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 4
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 4
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 4
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_eaae20b0d9": {
+      "id": "g_eaae20b0d9",
+      "kind": "project",
+      "section": "projects",
+      "text": "yellow-spring-flora-rapid",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 0
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "title": "yellow-spring-flora-rapid",
+        "year": "2026",
+        "bullets": [
+          "Gamified web app helping job seekers cope with a tough hiring market, generalised beyond the original idea. TypeScript app with user authentication, deployed on Vercel.",
+          "AI-assisted development end to end: concept, prompting, iteration and deployment. Code: github.com/BaeCodeBot/yellow-spring-flora-rapid"
+        ]
+      }
+    },
+    "g_87ae16baa1": {
+      "id": "g_87ae16baa1",
+      "kind": "project",
+      "section": "projects",
+      "text": "fire-beacon-umbra-bamboo",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 1
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 1
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 1
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 1
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "title": "fire-beacon-umbra-bamboo",
+        "year": "2026",
+        "bullets": [
+          "Earlier web app on the same problem of job seekers coping with a difficult market; built and deployed the same way.",
+          "Code: github.com/BaeCodeBot/fire-beacon-umbra-bamboo"
+        ]
+      }
+    },
+    "g_749ab4d86d": {
+      "id": "g_749ab4d86d",
+      "kind": "skill_group",
+      "section": "skills",
+      "text": "AI: Prompt engineering; LLM workflows (Claude, ChatGPT, Grok, DeepSeek); AI-assisted and agent-driven app development; Vercel and GitHub",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 0
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 2
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 2
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 3
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "group": "AI",
+        "items": "Prompt engineering; LLM workflows (Claude, ChatGPT, Grok, DeepSeek); AI-assisted and agent-driven app development; Vercel and GitHub"
+      }
+    },
+    "g_860738e333": {
+      "id": "g_860738e333",
+      "kind": "skill_group",
+      "section": "skills",
+      "text": "CTRM Domain: Trade lifecycle management; pricing (indexes, price providers, raw prices); End-of-Day process; estimated vs. actual pricing, reversals, credit/debit notes; Incoterms; shipping insurance (ICC clauses); risk across credit, price, currency and physical exposure; Lines of Defense (LoD1/LoD2); intercompany risk transfer",
+      "clusters": [
+        "commodity"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 1
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 1
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 1
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "group": "CTRM Domain",
+        "items": "Trade lifecycle management; pricing (indexes, price providers, raw prices); End-of-Day process; estimated vs. actual pricing, reversals, credit/debit notes; Incoterms; shipping insurance (ICC clauses); risk across credit, price, currency and physical exposure; Lines of Defense (LoD1/LoD2); intercompany risk transfer"
+      }
+    },
+    "g_1e4297c0dd": {
+      "id": "g_1e4297c0dd",
+      "kind": "skill_group",
+      "section": "skills",
+      "text": "Business Analysis: Stakeholder management; requirement analysis; functional/UAT testing; bug reproduction and documentation; process optimization",
+      "clusters": [
+        "ba_pa"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 2
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 1
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "group": "Business Analysis",
+        "items": "Stakeholder management; requirement analysis; functional/UAT testing; bug reproduction and documentation; process optimization"
+      }
+    },
+    "g_f4eee3e92f": {
+      "id": "g_f4eee3e92f",
+      "kind": "skill_group",
+      "section": "skills",
+      "text": "Technical: SQL (DataCamp); Advanced Excel (VLOOKUP, INDEX-MATCH, PivotTables); Power BI; Python basics (Udemy)",
+      "clusters": [
+        "general"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 3
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 3
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 3
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 2
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "group": "Technical",
+        "items": "SQL (DataCamp); Advanced Excel (VLOOKUP, INDEX-MATCH, PivotTables); Power BI; Python basics (Udemy)"
+      }
+    },
+    "g_426d86bd9a": {
+      "id": "g_426d86bd9a",
+      "kind": "skill_group",
+      "section": "skills",
+      "text": "Certifications: Harvard Business Publishing – Spreadsheet & Financial Modelling, Financial Accounting, Finance, Management Communication",
+      "clusters": [
+        "consulting"
+      ],
+      "sources": [
+        {
+          "file": "01-general-ai-product-analyst.md",
+          "pos": 4
+        },
+        {
+          "file": "02-consulting.md",
+          "pos": 4
+        },
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 4
+        },
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 4
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "meta": {
+        "group": "Certifications",
+        "items": "Harvard Business Publishing – Spreadsheet & Financial Modelling, Financial Accounting, Finance, Management Communication"
+      }
+    },
+    "g_9ab121b7a1": {
+      "id": "g_9ab121b7a1",
+      "kind": "headline",
+      "section": "header",
+      "text": "Consulting and Client Advisory | Commodity Trading Technology (CTRM)",
+      "clusters": [
+        "commodity",
+        "consulting"
+      ],
+      "sources": [
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "note": "headline lacks the locked title; rendered after 'Product Analyst' as a tagline"
+    },
+    "g_62f05722a5": {
+      "id": "g_62f05722a5",
+      "kind": "summary",
+      "section": "summary",
+      "text": "Finance and CTRM professional with client-facing consulting experience: a Strategy and Transactions internship at EY (revenue-model design, scenario analysis, KPI dashboards) and client delivery and pre-sales at Fendahl for Petronas, CBH and an oil-trading client. Winner, Startup Verse 2025 (team case competition). Also engineered prompts for Fusion AI and built two AI-assisted web apps. PGDM Finance (IMT Nagpur); XAT 98.12 percentile.",
+      "clusters": [
+        "commodity",
+        "consulting",
+        "general",
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "02-consulting.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_7d8d7cda18": {
+      "id": "g_7d8d7cda18",
+      "kind": "headline",
+      "section": "header",
+      "text": "Botany + Finance + CTRM/ETRM | Commodity Trading Domain",
+      "clusters": [
+        "commodity"
+      ],
+      "sources": [
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": [],
+      "note": "headline lacks the locked title; rendered after 'Product Analyst' as a tagline"
+    },
+    "g_f0a9489e56": {
+      "id": "g_f0a9489e56",
+      "kind": "summary",
+      "section": "summary",
+      "text": "Analyst with a three-part foundation for commodity trading technology: a BSc in Botany (the science behind agricultural commodities), a PGDM in Finance from IMT Nagpur (XAT 98.12 percentile), and hands-on CTRM/ETRM experience at Fendahl across trade lifecycle, pricing, risk and data migration for energy and agri clients including Petronas and CBH. Also engineered prompts for Fusion AI and built two AI-assisted web apps.",
+      "clusters": [
+        "commodity",
+        "general",
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "03-commodity-moat.md",
+          "pos": 0
+        }
+      ],
+      "blocked": true,
+      "block_reasons": [
+        "[client_scope] Petronas named next to 'pricing' in: '12 percentile), and hands-on CTRM/ETRM experience at Fendahl across trade lifecycle, prici'"
+      ]
+    },
+    "g_37ebdc05d4": {
+      "id": "g_37ebdc05d4",
+      "kind": "headline",
+      "section": "header",
+      "text": "Product Analyst | Business Analyst | CTRM / ETRM",
+      "clusters": [
+        "ba_pa",
+        "commodity"
+      ],
+      "sources": [
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    },
+    "g_5119fba5a2": {
+      "id": "g_5119fba5a2",
+      "kind": "summary",
+      "section": "summary",
+      "text": "Product Analyst in the Business Analysis team on Fendahl’s Fusion CTRM platform, working across requirement analysis, functional and UAT testing, defect resolution, data migration and stakeholder management for clients including Petronas and CBH. Functional owner of a documents module and a production data migration for an oil-trading client. Selected twice within six months: into the Business Analysis team, then into Pre-Sales. Hands-on with AI: prompt engineering on Fusion AI and two AI-assisted web apps. PGDM Finance (IMT Nagpur); XAT 98.12 percentile.",
+      "clusters": [
+        "ba_pa",
+        "commodity",
+        "general",
+        "implementation"
+      ],
+      "sources": [
+        {
+          "file": "04-business-product-analyst.md",
+          "pos": 0
+        }
+      ],
+      "blocked": false,
+      "block_reasons": []
+    }
+  },
+  "layouts": [
+    {
+      "file": "01-general-ai-product-analyst.md",
+      "angle": "ba_pa",
+      "section_order": [
+        "summary",
+        "experience",
+        "projects",
+        "education",
+        "skills"
+      ],
+      "bullets": {
+        "fendahl": [
+          "g_fe5abf97e9",
+          "g_e534921f1a",
+          "g_6bc666ce89",
+          "g_8989e1bc73",
+          "g_088b1a88dd",
+          "g_9f68ca17c2",
+          "g_d21bdc3232"
+        ],
+        "ey": [
+          "g_10e8a14226",
+          "g_1d41d77000",
+          "g_d768e333c8"
+        ],
+        "startup_odisha": [
+          "g_f8e59192de",
+          "g_48068f8083",
+          "g_aa9042bfca",
+          "g_82e74ca644",
+          "g_f851ad06af"
+        ]
+      },
+      "skills": [
+        "g_749ab4d86d",
+        "g_860738e333",
+        "g_1e4297c0dd",
+        "g_f4eee3e92f",
+        "g_426d86bd9a"
+      ],
+      "summary": "g_91b2d0dc5c",
+      "headline": null,
+      "projects": [
+        "g_eaae20b0d9",
+        "g_87ae16baa1"
+      ]
+    },
+    {
+      "file": "02-consulting.md",
+      "angle": "consulting",
+      "section_order": [
+        "summary",
+        "experience",
+        "education",
+        "projects",
+        "skills"
+      ],
+      "bullets": {
+        "fendahl": [
+          "g_6bc666ce89",
+          "g_d21bdc3232",
+          "g_9f68ca17c2",
+          "g_e534921f1a",
+          "g_088b1a88dd",
+          "g_8989e1bc73",
+          "g_fe5abf97e9"
+        ],
+        "ey": [
+          "g_10e8a14226",
+          "g_1d41d77000",
+          "g_d768e333c8"
+        ],
+        "startup_odisha": [
+          "g_f8e59192de",
+          "g_48068f8083",
+          "g_aa9042bfca",
+          "g_82e74ca644",
+          "g_f851ad06af"
+        ]
+      },
+      "skills": [
+        "g_1e4297c0dd",
+        "g_860738e333",
+        "g_749ab4d86d",
+        "g_f4eee3e92f",
+        "g_426d86bd9a"
+      ],
+      "summary": "g_62f05722a5",
+      "headline": "g_9ab121b7a1",
+      "projects": [
+        "g_eaae20b0d9",
+        "g_87ae16baa1"
+      ]
+    },
+    {
+      "file": "03-commodity-moat.md",
+      "angle": "commodity",
+      "section_order": [
+        "summary",
+        "education",
+        "experience",
+        "projects",
+        "skills"
+      ],
+      "bullets": {
+        "fendahl": [
+          "g_6bc666ce89",
+          "g_9f68ca17c2",
+          "g_088b1a88dd",
+          "g_8989e1bc73",
+          "g_fe5abf97e9",
+          "g_e534921f1a",
+          "g_d21bdc3232"
+        ],
+        "ey": [
+          "g_10e8a14226",
+          "g_1d41d77000",
+          "g_d768e333c8"
+        ],
+        "startup_odisha": [
+          "g_f8e59192de",
+          "g_48068f8083",
+          "g_aa9042bfca",
+          "g_82e74ca644",
+          "g_f851ad06af"
+        ]
+      },
+      "skills": [
+        "g_860738e333",
+        "g_1e4297c0dd",
+        "g_749ab4d86d",
+        "g_f4eee3e92f",
+        "g_426d86bd9a"
+      ],
+      "summary": "g_f0a9489e56",
+      "headline": "g_7d8d7cda18",
+      "projects": [
+        "g_eaae20b0d9",
+        "g_87ae16baa1"
+      ]
+    },
+    {
+      "file": "04-business-product-analyst.md",
+      "angle": "ba_pa",
+      "section_order": [
+        "summary",
+        "experience",
+        "projects",
+        "education",
+        "skills"
+      ],
+      "bullets": {
+        "fendahl": [
+          "g_9f68ca17c2",
+          "g_8989e1bc73",
+          "g_6bc666ce89",
+          "g_088b1a88dd",
+          "g_fe5abf97e9",
+          "g_e534921f1a",
+          "g_d21bdc3232"
+        ],
+        "ey": [
+          "g_10e8a14226",
+          "g_1d41d77000",
+          "g_d768e333c8"
+        ],
+        "startup_odisha": [
+          "g_f8e59192de",
+          "g_48068f8083",
+          "g_aa9042bfca",
+          "g_82e74ca644",
+          "g_f851ad06af"
+        ]
+      },
+      "skills": [
+        "g_1e4297c0dd",
+        "g_860738e333",
+        "g_f4eee3e92f",
+        "g_749ab4d86d",
+        "g_426d86bd9a"
+      ],
+      "summary": "g_5119fba5a2",
+      "headline": "g_37ebdc05d4",
+      "projects": [
+        "g_eaae20b0d9",
+        "g_87ae16baa1"
+      ]
+    }
+  ],
+  "known_nouns": [
+    "accounting",
+    "advisory",
+    "ai",
+    "ai-assisted",
+    "also",
+    "analysis",
+    "analyst",
+    "anvil",
+    "apr",
+    "associate",
+    "autonomous",
+    "baecodebot/fire-beacon-umbra-bamboo",
+    "baecodebot/yellow-spring-flora-rapid",
+    "bi",
+    "botany",
+    "bsc",
+    "built",
+    "business",
+    "cbh",
+    "certifications",
+    "cgpa",
+    "chatgpt",
+    "claude",
+    "client",
+    "code",
+    "college",
+    "commodity",
+    "communication",
+    "consulting",
+    "csr-funded",
+    "ctrm",
+    "ctrm/etrm",
+    "cut",
+    "daily",
+    "datacamp",
+    "deepseek",
+    "defense",
+    "diploma",
+    "domain",
+    "earlier",
+    "edit",
+    "end-of-day",
+    "etrm",
+    "excel",
+    "excel-based",
+    "ey",
+    "fendahl",
+    "fendahl’s",
+    "finance",
+    "financial",
+    "functional",
+    "fusion",
+    "gamified",
+    "github",
+    "government",
+    "graduate",
+    "grok",
+    "hands-on",
+    "harvard",
+    "icc",
+    "imt",
+    "incoterms",
+    "index-match",
+    "india",
+    "institute",
+    "intern",
+    "jul",
+    "jun",
+    "junior",
+    "kpi",
+    "kumar",
+    "lines",
+    "llm",
+    "locked",
+    "lod1/lod2",
+    "maharashtra",
+    "management",
+    "manually",
+    "mar",
+    "may",
+    "modelling",
+    "nagpur",
+    "odisha",
+    "petronas",
+    "pgdm",
+    "pivottables",
+    "post",
+    "power",
+    "pre-sales",
+    "present",
+    "product",
+    "prompt",
+    "publishing",
+    "python",
+    "query",
+    "ray",
+    "rourkela",
+    "spreadsheet",
+    "sql",
+    "stakeholder",
+    "startup",
+    "strategy",
+    "swastik",
+    "technical",
+    "technology",
+    "trade",
+    "trading",
+    "transactions",
+    "typescript",
+    "uat",
+    "udemy",
+    "vercel",
+    "verse",
+    "vlookup",
+    "winner",
+    "xat"
+  ],
+  "known_numbers": [
+    "1",
+    "10",
+    "11",
+    "12",
+    "17",
+    "181",
+    "2",
+    "2019",
+    "2022",
+    "2023",
+    "2024",
+    "2025",
+    "2026",
+    "2300",
+    "3",
+    "4",
+    "40",
+    "5",
+    "50",
+    "56663",
+    "63717",
+    "7",
+    "7.5",
+    "9",
+    "90",
+    "91",
+    "98.12"
+  ],
+  "warnings": []
+}

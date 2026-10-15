@@ -1,0 +1,128 @@
+{
+  "_note": "LOCKED facts. Anvil never generates these; it copies them verbatim. Edit only if a real fact changes.",
+  "name": "SWASTIK KUMAR RAY",
+  "title": "Product Analyst",
+  "contact": {
+    "location": "Nagpur, Maharashtra, India",
+    "phone": "+91 63717 56663",
+    "email": "swastikray90@gmail.com",
+    "linkedin": "linkedin.com/in/swastik-kumar-ray",
+    "linkedin_url": "https://www.linkedin.com/in/swastik-kumar-ray/"
+  },
+  "experience": [
+    {
+      "key": "fendahl",
+      "title": "Product Analyst",
+      "company": "Fendahl (Fusion CTRM)",
+      "location": "Nagpur",
+      "dates": "Apr 2026 – Present",
+      "match": [
+        "Fendahl"
+      ],
+      "min_bullets": 5,
+      "max_bullets": 7
+    },
+    {
+      "key": "ey",
+      "title": "Strategy and Transactions Intern",
+      "company": "EY",
+      "location": "",
+      "dates": "Apr 2025 – May 2025",
+      "match": [
+        "EY"
+      ],
+      "min_bullets": 2,
+      "max_bullets": 3
+    },
+    {
+      "key": "startup_odisha",
+      "title": "Junior Associate",
+      "company": "Startup Odisha, Government of Odisha",
+      "location": "",
+      "dates": "Apr 2023 – Jul 2023",
+      "match": [
+        "Startup Odisha"
+      ],
+      "min_bullets": 3,
+      "max_bullets": 5
+    }
+  ],
+  "education": [
+    {
+      "degree": "Post Graduate Diploma in Management (Finance)",
+      "dates": "Jun 2024 – Mar 2026",
+      "school": "Institute of Management Technology (IMT), Nagpur",
+      "detail": "CGPA 7.5/10 | XAT 98.12 percentile (40% merit fee waiver) | Winner, Startup Verse 2025 (team case competition)"
+    },
+    {
+      "degree": "BSc (Botany)",
+      "dates": "Jun 2019 – Jul 2022",
+      "school": "Government Autonomous College, Rourkela",
+      "detail": ""
+    }
+  ],
+  "clients": {
+    "named_whitelist": [
+      "Petronas",
+      "CBH"
+    ],
+    "scope": {
+      "Petronas": {
+        "allowed": [
+          "trade data import/export",
+          "import/export",
+          "trade data"
+        ],
+        "forbidden_terms": [
+          "pricing",
+          "price config",
+          "price setup",
+          "configuration"
+        ]
+      },
+      "CBH": {
+        "allowed": [
+          "functional and workflow testing",
+          "trade creation",
+          "bug reproduction",
+          "documentation"
+        ],
+        "forbidden_terms": []
+      }
+    },
+    "known_anonymised": [
+      "an oil-trading client"
+    ]
+  },
+  "banned_phrases": [
+    "spearheaded",
+    "spearhead",
+    "orchestrated",
+    "orchestrate",
+    "championed",
+    "champion",
+    "leveraged",
+    "leveraging",
+    "leverage",
+    "delved",
+    "delve",
+    "delving",
+    "zero-defect",
+    "testament",
+    "cutting-edge",
+    "synergy",
+    "synergies",
+    "seamless",
+    "seamlessly",
+    "passionate",
+    "dynamic",
+    "results-driven",
+    "go-getter",
+    "robust",
+    "tapestry",
+    "pivotal"
+  ],
+  "banned_chars": [
+    "—"
+  ]
+}

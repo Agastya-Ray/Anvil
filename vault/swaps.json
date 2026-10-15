@@ -1,0 +1,22 @@
+{
+  "_note": "Deterministic 0-token wording swaps. A swap is applied only when the JD uses one of when_jd_has and the CV line contains `from`. Only add swaps that describe the same real work. Entries with verified=false are ignored.",
+  "swaps": [
+    {"from": "bug reproduction", "to": "defect reproduction", "when_jd_has": ["defect"], "verified": true},
+    {"from": "requirement analysis", "to": "requirements gathering", "when_jd_has": ["requirements gathering", "gather requirements", "gathering requirements"], "verified": true},
+    {"from": "requirement analysis", "to": "requirements analysis", "when_jd_has": ["requirements analysis"], "verified": true},
+    {"from": "process optimization", "to": "process improvement", "when_jd_has": ["process improvement"], "verified": true},
+    {"from": "functional and workflow testing", "to": "functional and workflow testing (UAT)", "when_jd_has": ["uat", "user acceptance"], "verified": true},
+    {"from": "sample KPI dashboards", "to": "sample KPI reporting dashboards", "when_jd_has": ["reporting"], "verified": true},
+    {"from": "data quality discrepancies", "to": "data quality and reconciliation discrepancies", "when_jd_has": ["reconciliation", "reconcile"], "verified": true},
+    {"from": "requirement analysis", "to": "requirement analysis and BRD/FRD documentation", "when_jd_has": ["brd", "frd", "requirements document"], "verified": false,
+     "_why_unverified": "The Anvil spec says he wrote BRDs at Fendahl, but no real CV says so. Set verified to true only if Swastik confirms."},
+    {"from": "requirement analysis", "to": "requirement and impact analysis", "when_jd_has": ["impact analysis", "impact assessment"], "verified": false,
+     "_why_unverified": "Impact analysis is in the spec but in no real CV. Set verified to true only if Swastik confirms."}
+  ],
+  "unverified_claims": [
+    {"skill": "BRD / FRD", "evidence": "requirement analysis", "verified": false,
+     "note": "Spec lists BRDs as real Fendahl work; no CV mentions it. When verified, the JD diff shows it as an implied safe swap."},
+    {"skill": "Impact analysis", "evidence": "requirement analysis", "verified": false,
+     "note": "Same as above."}
+  ]
+}

@@ -1,0 +1,3 @@
+verdict,company,role,location,pay,pay_source,posted,url,why,flags,first_seen,last_checked,canonical_id
+PASS,Sprinto,Revenue Operations Analyst - Customer Experience & Partner Operations,Remote (India),UNKNOWN,none,2026-09-15,https://jobs.lever.co/Sprinto/56d536c2-812c-49be-8421-6ad63c42a273,Remote India RevOps,,2026-10-14,2026-10-14,lever:sprinto:56d536c2-812c-49be-8421-6ad63c42a273
+DEAD,OldCo,Analyst,Remote,UNKNOWN,none,,https://example.com/x,,,2026-10-01,2026-10-02,lever:oldco:1
