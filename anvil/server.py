@@ -160,6 +160,12 @@ def _base_url(environ) -> str:
 def app(environ, start):
     method = environ.get("REQUEST_METHOD", "GET").upper()
     path = environ.get("PATH_INFO", "/") or "/"
+    # On Vercel every route is rewritten to /api/index?__path=/<original path> (see vercel.json).
+    qs = parse_qs(environ.get("QUERY_STRING", ""), keep_blank_values=True)
+    if "__path" in qs:
+        path = "/" + qs.pop("__path")[0].lstrip("/")
+        environ["QUERY_STRING"] = "&".join(f"{k}={quote(v, safe='')}" for k, vs in qs.items() for v in vs)
+        environ["PATH_INFO"] = path
     if method == "OPTIONS":
         return _resp(start, "204 No Content", b"")
     if path in ("/", "/index.html"):

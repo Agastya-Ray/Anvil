@@ -5,5 +5,5 @@
       "includeFiles": "{anvil/**,vault/**}"
     }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+  "rewrites": [{ "source": "/:path*", "destination": "/api/index?__path=/:path*" }]
 }
